@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Scene.h"
 #include "Platform/Window.h"
 #include "Renderer/Renderer.h"
 #include "UI/UI.h"
@@ -25,6 +26,9 @@ namespace Cosmos
 		// returns a smart-ptr to the user interface
 		inline Shared<UI> GetUI() { return mUI; }
 
+		// returns a smart-ptr to the scene
+		inline Shared<Scene> GetScene() { return mScene; }
+
 	public:
 
 		// main loop
@@ -33,10 +37,11 @@ namespace Cosmos
 		// event handling
 		void OnEvent(Shared<Event> event);
 
-	private:
+	protected:
 
 		Shared<Window> mWindow;
 		Shared<Renderer> mRenderer;
 		Shared<UI> mUI;
+		Shared<Scene> mScene;
 	};
 }

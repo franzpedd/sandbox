@@ -25,7 +25,7 @@ namespace Cosmos
 		~UI();
 
 		// returns a reference to the stack of widgets
-		inline Stack<Widget>& GetWidgetStackRef() { return mWidgets; }
+		inline Stack<Widget*>& GetWidgetStackRef() { return mWidgets; }
 
 	public:
 
@@ -63,7 +63,7 @@ namespace Cosmos
 	private:
 
 		Application* mApplication;
-		Stack<Widget> mWidgets;
+		Stack<Widget*> mWidgets;
 		ImFont* mIconFA;
 		ImFont* mIconLC;
 	};

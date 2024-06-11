@@ -64,7 +64,7 @@ namespace Cosmos
 		VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 		std::vector<VkCommandBuffer> submitCommandBuffers = { mRenderpassManager->GetRenderpassesRef()["Swapchain"]->GetSpecificationRef().commandBuffers[mCurrentFrame] };
 
-		if (mRenderpassManager->Exists("Viewport"))
+		if (mRenderpassManager->Exists("VWiewport"))
 		{
 			submitCommandBuffers.push_back(mRenderpassManager->GetRenderpassesRef()["Viewport"]->GetSpecificationRef().commandBuffers[mCurrentFrame]);
 		}
@@ -102,8 +102,7 @@ namespace Cosmos
 			mSwapchain->Recreate();
 		
 			mCamera->SetAspectRatio(mWindow->GetAspectRatio());
-			COSMOS_LOG(Logger::Todo, "FIXME");
-			//Application::GetInstance()->GetGUI()->SetImageCount(mSwapchain->GetImageCount());
+			mApplication->GetUI()->SetImageCount(mSwapchain->GetImageCount());
 		
 			int32_t width = (int32_t)mSwapchain->GetExtent().width;
 			int32_t height = (int32_t)mSwapchain->GetExtent().height;
@@ -173,8 +172,7 @@ namespace Cosmos
 			// render scene, only if viewport doesnt exists
 			if (!mRenderpassManager->Exists("Viewport"))
 			{
-				COSMOS_LOG(Logger::Todo, "FIX ME");
-				//Application::GetInstance()->GetActiveScene()->OnRender();
+				mApplication->GetScene()->OnRender();
 			}
 
 			vkCmdEndRenderPass(cmdBuffer);
@@ -225,8 +223,7 @@ namespace Cosmos
 			vkCmdSetScissor(cmdBuffer, 0, 1, &scissor);
 
 			// render scene and special widgets
-			COSMOS_LOG(Logger::Todo, "FIX ME");
-			//Application::GetInstance()->GetActiveScene()->OnRender();
+			mApplication->GetScene()->OnRender();
 
 			vkCmdEndRenderPass(cmdBuffer);
 

@@ -43,7 +43,7 @@ namespace Cosmos
 
 		// event handling
 		virtual void OnEvent(Shared<Event> event);
-
+		
 	protected:
 
 		Application* mApplication;

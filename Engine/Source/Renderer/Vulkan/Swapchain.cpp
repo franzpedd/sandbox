@@ -266,6 +266,7 @@ namespace Cosmos::Vulkan
 
 	void Swapchain::Recreate()
 	{
+		mWindow->HintResize(false);
 		mWindow->Recreate();
 
 		vkDeviceWaitIdle(mDevice->GetLogicalDevice());

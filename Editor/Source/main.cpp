@@ -1,13 +1,11 @@
-#include <Engine.h>
+#include "Core/Editor.h"
 #include <iostream>
-
-#include "Platform/Detection.h"
 
 int main(int argc, char* argv[])
 {
     std::cout << "Hello World" << std::endl;
 
-    Cosmos::Application app;
+    Cosmos::Editor app;
     app.Run();
 
     return 0;

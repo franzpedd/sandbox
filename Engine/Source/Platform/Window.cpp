@@ -133,7 +133,7 @@ namespace Cosmos
 
                 case SDL_WINDOWEVENT:
                 {
-                    if (SDL_E.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)
+                    if (SDL_E.window.event == SDL_WINDOWEVENT_SIZE_CHANGED || SDL_E.window.event == SDL_WINDOWEVENT_MINIMIZED)
                     {
                         HintResize(true);
                     
@@ -193,15 +193,15 @@ namespace Cosmos
 
         int32_t width = 0;
         int32_t height = 0;
-        GetFrameBufferSize(&width, &height);
+        SDL_Vulkan_GetDrawableSize(mNativeWindow, &width, &height);
 
-        while (width == 0 || height == 0)
+        // this is wacky but SDL_Vulkan will contain invalid data when the window is minimized, 
+        // so we must stale the window somehow, I have choose to wait the application but this will not be viable for the future
+        // therefore I must consider creating a swapchain with invalid size?
+        while(SDL_GetWindowFlags(mNativeWindow) & SDL_WINDOW_MINIMIZED)
         {
-            GetFrameBufferSize(&width, &height);
             SDL_WaitEvent(&e);
         }
-
-        HintResize(false);
     }
 
     float Window::GetAspectRatio()

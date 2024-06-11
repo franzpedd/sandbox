@@ -52,9 +52,9 @@ namespace Cosmos
 		ImGui::NewFrame();
 		ImGuizmo::BeginFrame();
 
-		for (auto widget : mWidgets.GetElementsRef())
+		for (auto& widget : mWidgets.GetElementsRef())
 		{
-			widget.OnUpdate();
+			widget->OnUpdate();
 		}
 
 		// end frame
@@ -70,9 +70,9 @@ namespace Cosmos
 
 	void UI::OnRender()
 	{
-		for (auto widget : mWidgets.GetElementsRef())
+		for (auto& widget : mWidgets.GetElementsRef())
 		{
-			widget.OnRender();
+			widget->OnRender();
 		}
 	}
 
@@ -123,9 +123,9 @@ namespace Cosmos
 		}
 
 		// resize ui objects
-		for (auto widget : mWidgets.GetElementsRef())
+		for (auto& widget : mWidgets.GetElementsRef())
 		{
-			widget.OnEvent(event);
+			widget->OnEvent(event);
 		}
 	}
 

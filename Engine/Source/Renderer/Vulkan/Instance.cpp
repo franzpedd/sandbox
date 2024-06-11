@@ -32,7 +32,7 @@ namespace Cosmos::Vulkan
 		instanceCI.flags = 0;
 #if defined PLATFORM_APPLE
 		instanceCI.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
-#endif;
+#endif
 		instanceCI.pApplicationInfo = &applicationInfo;
 
 		if (validations)
