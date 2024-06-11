@@ -1,0 +1,18 @@
+# Folders
+_build/
+.vs/
+.vscode/
+Thirdparty/glm
+Thirdparty/imgui
+Thirdparty/imguizmo
+Thirdparty/premake
+Thirdparty/sdl
+Thirdparty/vma
+Thirdparty/volk
+
+# extensions
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.spv

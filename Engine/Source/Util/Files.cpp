@@ -1,0 +1,82 @@
+#include "epch.h"
+#include "Files.h"
+
+#include "Algorithm.h"
+#include "Logger.h"
+
+#include <fstream>
+#include <filesystem>
+
+namespace Cosmos
+{
+	std::string GetBinDir()
+	{
+		std::string binDir = std::filesystem::current_path().string();
+		Cosmos::replace(binDir.begin(), binDir.end(), '\\', '/');
+
+		return binDir;
+	}
+
+	std::string GetAssetsDir()
+	{
+		// assuming the folder we're in is Editor or Game
+		// this allows us to load stuff on editor or game relatively, it is hacky but allow
+		// files to be saved without full path directories
+		return std::string{ "../Data/" };
+	}
+
+	std::string GetAssetSubDir(std::string subpath, bool removeExtension)
+	{
+		std::string assets = GetAssetsDir();
+		assets.append(subpath);
+
+		if (removeExtension)
+			assets.erase(assets.begin() + assets.find_last_of('.'), assets.end());
+
+		return assets;
+	}
+
+	std::vector<uint8_t> ReadFromBinary(std::string path)
+	{
+		std::ifstream file(path, std::fstream::in | std::fstream::binary);
+		std::vector<uint8_t> data = {};
+		std::streampos size;
+
+		if (file.is_open())
+		{
+			// retrieve bianary size
+			file.seekg(0, std::ios::end);
+			size = file.tellg();
+			file.seekg(0, std::ios::beg);
+
+			// read data
+			data.resize(size);
+			file.read((char*)&data[0], size);
+
+			file.close();
+		}
+
+		else
+		{
+			COSMOS_LOG(Logger::Error, "Failed to read binary file %s", path.c_str());
+		}
+
+		return data;
+	}
+
+	void WriteToBinary(std::string path, const void* data, size_t dataSize)
+	{
+		std::ofstream file(path, std::fstream::out | std::fstream::binary | std::ios::app);
+
+		if (file.is_open())
+		{
+			file.write(reinterpret_cast<char*>(&data), sizeof(dataSize));
+		}
+
+		else
+		{
+			COSMOS_LOG(Logger::Error, "Failed to read binary file %s", path.c_str());
+		}
+	}
+}
+
