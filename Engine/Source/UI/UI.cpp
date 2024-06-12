@@ -39,6 +39,8 @@ namespace Cosmos
 
 	UI::~UI()
 	{
+		vkDeviceWaitIdle(std::dynamic_pointer_cast<VKRenderer>(mApplication->GetRenderer())->GetDevice()->GetLogicalDevice());
+
 		ImGui_ImplVulkan_Shutdown();
 		ImGui_ImplSDL2_Shutdown();
 		ImGui::DestroyContext();
@@ -107,18 +109,7 @@ namespace Cosmos
 				framebufferCI.width = swapchain->GetExtent().width;
 				framebufferCI.height = swapchain->GetExtent().height;
 				framebufferCI.layers = 1;
-
-				COSMOS_ASSERT
-				(
-					vkCreateFramebuffer
-					(
-						device->GetLogicalDevice(),
-						&framebufferCI,
-						nullptr,
-						&renderpass.frameBuffers[i]
-					) == VK_SUCCESS,
-					"Failed to create framebuffer"
-				);
+				COSMOS_ASSERT(vkCreateFramebuffer(device->GetLogicalDevice(), &framebufferCI, nullptr, &renderpass.frameBuffers[i]) == VK_SUCCESS, "Failed to create framebuffer");
 			}
 		}
 
@@ -156,6 +147,50 @@ namespace Cosmos
 	void UI::HandleInternalEvent(SDL_Event* e)
 	{
 		ImGui_ImplSDL2_ProcessEvent(e);
+	}
+
+	void* UI::AddTexture(void* sampler, void* view)
+	{
+		ImGui_ImplVulkan_Data* bd = ImGui_ImplVulkan_GetBackendData();
+		ImGui_ImplVulkan_InitInfo* v = &bd->VulkanInitInfo;
+
+		// create descriptor set
+		VkDescriptorSet descriptorSet;
+		{
+			VkDescriptorSetAllocateInfo alloc_info = {};
+			alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+			alloc_info.descriptorPool = v->DescriptorPool;
+			alloc_info.descriptorSetCount = 1;
+			alloc_info.pSetLayouts = &bd->DescriptorSetLayout;
+			VkResult err = vkAllocateDescriptorSets(v->Device, &alloc_info, &descriptorSet);
+			check_vk_result(err);
+		}
+
+		// update descriptor set
+		{
+			VkDescriptorImageInfo desc_image[1] = {};
+			desc_image[0].sampler = (VkSampler)sampler;
+			desc_image[0].imageView = (VkImageView)view;
+			desc_image[0].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+			VkWriteDescriptorSet write_desc[1] = {};
+			write_desc[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			write_desc[0].dstSet = descriptorSet;
+			write_desc[0].descriptorCount = 1;
+			write_desc[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			write_desc[0].pImageInfo = desc_image;
+			vkUpdateDescriptorSets(v->Device, 1, write_desc, 0, nullptr);
+		}
+
+		return descriptorSet;
+	}
+
+	void UI::RemoveTexture(void* descriptor)
+	{
+		ImGui_ImplVulkan_Data* bd = ImGui_ImplVulkan_GetBackendData();
+		ImGui_ImplVulkan_InitInfo* v = &bd->VulkanInitInfo;
+		vkDeviceWaitIdle(v->Device);
+		vkFreeDescriptorSets(v->Device, v->DescriptorPool, 1, &(VkDescriptorSet&)descriptor);
 	}
 
 	void UI::SetupConfiguration()

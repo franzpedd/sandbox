@@ -46,11 +46,21 @@ namespace Cosmos
 		// sets the minimum image count, used whenever the swapchain is resized and image count change
 		void SetImageCount(uint32_t count);
 
+	public:
+
 		// enables/disables cursor
-		void ToggleCursor(bool hide);
+		static void ToggleCursor(bool hide);
 
 		// sends sdl events to user interface
 		static void HandleInternalEvent(SDL_Event* e);
+
+	public:
+
+		// adds a texture into the ui
+		static void* AddTexture(void* sampler, void* view);
+
+		// removes a texture from the ui
+		static void RemoveTexture(void* descriptor);
 
 	private:
 

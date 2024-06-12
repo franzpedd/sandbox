@@ -53,7 +53,13 @@ namespace Cosmos::Vulkan
 		// returns a reference to the renderpasses
 		inline std::unordered_map<std::string, Shared<Renderpass>>& GetRenderpassesRef() { return mRenderpasses; }
 
+		// returns the main renderpass at the momment
+		inline Shared<Renderpass> GetMainRenderpass() { return mMainRenderpass; }
+
 	public:
+
+		// sets the main renderpass
+		bool SetMain(const char* nameid);
 
 		// returns if VKCommandEntry exists
 		bool Exists(const char* nameid);

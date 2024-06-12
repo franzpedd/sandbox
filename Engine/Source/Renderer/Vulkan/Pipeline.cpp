@@ -218,10 +218,16 @@ namespace Cosmos::Vulkan
         vkDestroyPipelineCache(mDevice->GetLogicalDevice(), mCache, nullptr);
 	}
 
+    void PipelineLibrary::RecreatePipelines()
+    {
+        CreateMeshPipeline();
+        CreateSkyboxPipeline();
+    }
+
     void PipelineLibrary::CreateMeshPipeline()
     {
         Pipeline::Specification meshSpecification = {};
-        meshSpecification.renderPass = mRenderpassManager->GetRenderpassesRef()["Swapchain"];
+        meshSpecification.renderPass = mRenderpassManager->GetMainRenderpass();
         meshSpecification.vertexShader = CreateShared<Shader>(mDevice, Shader::Type::Vertex, "Mesh.vert", GetAssetSubDir("Shader/mesh.vert"));
         meshSpecification.fragmentShader = CreateShared<Shader>(mDevice, Shader::Type::Fragment, "Mesh.frag", GetAssetSubDir("Shader/mesh.frag"));
         meshSpecification.vertexComponents = { Vertex::Component::POSITION, Vertex::Component::COLOR, Vertex::Component::NORMAL, Vertex::Component::UV };
@@ -271,7 +277,7 @@ namespace Cosmos::Vulkan
     void PipelineLibrary::CreateSkyboxPipeline()
     {
         Pipeline::Specification skyboxSpecification = {};
-        skyboxSpecification.renderPass = mRenderpassManager->GetRenderpassesRef()["Swapchain"];
+        skyboxSpecification.renderPass = mRenderpassManager->GetMainRenderpass();
         skyboxSpecification.vertexShader = CreateShared<Shader>(mDevice, Shader::Type::Vertex, "Skybox.vert", GetAssetSubDir("Shader/skybox.vert"));
         skyboxSpecification.fragmentShader = CreateShared<Shader>(mDevice, Shader::Type::Fragment, "Skybox.frag", GetAssetSubDir("Shader/skybox.frag"));
         skyboxSpecification.vertexComponents = { Vertex::Component::POSITION };

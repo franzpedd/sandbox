@@ -4,6 +4,7 @@
 #include "Core/Application.h"
 #include "Platform/Detection.h"
 #include "UI/UI.h"
+#include "Util/Logger.h"
 
 #if defined(PLATFORM_WINDOWS)
 #pragma warning(push)
@@ -31,7 +32,7 @@ namespace Cosmos
 	{
 		if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) != 0)
 		{
-			SDL_Log("Could not initialize SDL. Error: %s", SDL_GetError());
+			COSMOS_LOG(Logger::Assert, "Could not initialize SDL. Error: %s", SDL_GetError());
 			return;
 		}
 
@@ -49,7 +50,7 @@ namespace Cosmos
 
 		if (!mNativeWindow)
 		{
-			SDL_Log("Could not create SDL Window. Error: %s", SDL_GetError());
+            COSMOS_LOG(Logger::Assert, "Could not create SDL Window. Error: %s", SDL_GetError());
 			return;
 		}
 	}
@@ -187,7 +188,7 @@ namespace Cosmos
         SDL_Vulkan_GetDrawableSize(mNativeWindow, width, height);
     }
 
-    void Window::Recreate()
+    void Window::ResizeFramebuffer()
     {
         SDL_Event e;
 
@@ -195,9 +196,11 @@ namespace Cosmos
         int32_t height = 0;
         SDL_Vulkan_GetDrawableSize(mNativeWindow, &width, &height);
 
-        // this is wacky but SDL_Vulkan will contain invalid data when the window is minimized, 
-        // so we must stale the window somehow, I have choose to wait the application but this will not be viable for the future
-        // therefore I must consider creating a swapchain with invalid size?
+        // this is wacky but we can't create a swapchain with the window minimized, therefore we must stalle the window somehow
+        // I have choosen to wait the application until it's not minimized anymore but this may not be viable when you wan't the application
+        // to continue going even after minized.
+        COSMOS_LOG(Logger::Todo, "Address the commented issue above");
+
         while(SDL_GetWindowFlags(mNativeWindow) & SDL_WINDOW_MINIMIZED)
         {
             SDL_WaitEvent(&e);
@@ -228,7 +231,7 @@ namespace Cosmos
     {
         if (!SDL_Vulkan_CreateSurface(mNativeWindow, (VkInstance)instance, (VkSurfaceKHR*)(surface)))
         {
-            SDL_Log("Error when creating SDL Window Surface for Vulkan. Error: %s", SDL_GetError());
+            COSMOS_LOG(Logger::Assert, "Error when creating SDL Window Surface for Vulkan. Error: %s", SDL_GetError());
         }
     }
 

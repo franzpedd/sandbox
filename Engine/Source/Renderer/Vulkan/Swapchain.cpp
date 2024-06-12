@@ -12,6 +12,7 @@ namespace Cosmos::Vulkan
 		: mWindow(window), mDevice(device), mRenderpassManager(renderpassManager), mMaxFrames(maxFrames)
 	{
 		mRenderpassManager->Insert("Swapchain", mDevice->GetMSAA());
+		mRenderpassManager->SetMain("Swapchain");
 
 		CreateSwapchain();
 		CreateImageViews();
@@ -51,7 +52,10 @@ namespace Cosmos::Vulkan
 		mExtent = ChooseExtent(details.capabilities);
 
 		mImageCount = details.capabilities.minImageCount + 1;
-		if (details.capabilities.maxImageCount > 0 && mImageCount > details.capabilities.maxImageCount) mImageCount = details.capabilities.maxImageCount;
+		if (details.capabilities.maxImageCount > 0 && mImageCount > details.capabilities.maxImageCount)
+		{
+			mImageCount = details.capabilities.maxImageCount;
+		}
 
 		// create the swapchain
 		Device::QueueFamilyIndices indices = mDevice->FindQueueFamilies(mDevice->GetPhysicalDevice(), mDevice->GetSurface());
@@ -267,7 +271,7 @@ namespace Cosmos::Vulkan
 	void Swapchain::Recreate()
 	{
 		mWindow->HintResize(false);
-		mWindow->Recreate();
+		mWindow->ResizeFramebuffer();
 
 		vkDeviceWaitIdle(mDevice->GetLogicalDevice());
 
@@ -364,7 +368,10 @@ namespace Cosmos::Vulkan
 
 	VkExtent2D Swapchain::ChooseExtent(const VkSurfaceCapabilitiesKHR& capabilities)
 	{
-		if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) return capabilities.currentExtent;
+		if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
+		{
+			return capabilities.currentExtent;
+		}
 
 		int32_t width, height;
 		mWindow->GetFrameBufferSize(&width, &height);

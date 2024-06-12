@@ -33,6 +33,19 @@ namespace Cosmos::Vulkan
 	{
 	}
 
+	bool RenderpassManager::SetMain(const char* nameid)
+	{
+		auto it = mRenderpasses.find(nameid);
+
+		if (it != mRenderpasses.end())
+		{
+			mMainRenderpass = mRenderpasses[nameid];
+			return true;
+		}
+
+		return false;
+	}
+
 	bool RenderpassManager::Exists(const char* nameid)
 	{
 		return mRenderpasses.find(nameid) != mRenderpasses.end() ? true : false;

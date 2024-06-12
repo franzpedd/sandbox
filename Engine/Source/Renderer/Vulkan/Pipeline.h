@@ -103,6 +103,9 @@ namespace Cosmos::Vulkan
         // returns a reference to the pipeline libraries
         inline std::unordered_map<std::string, Shared<Pipeline>>& GetPipelinesRef() { return mPipelines; }
 
+        // recreate all pipelines, used when renderpass get's modified
+        void RecreatePipelines();
+
     private:
 
         // create globally-used pipeline for meshes

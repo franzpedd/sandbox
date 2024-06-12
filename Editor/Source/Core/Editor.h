@@ -5,7 +5,9 @@
 namespace Cosmos
 {
 	// forward declarations
+	class Dockspace;
 	class ImDemo;
+	class Viewport;
 
 	class Editor : public Application
 	{
@@ -19,6 +21,8 @@ namespace Cosmos
 
 	private:
 
+		Dockspace* mDockspace;
 		ImDemo* mImDemo;
+		Viewport* mViewport;
 	};
 }

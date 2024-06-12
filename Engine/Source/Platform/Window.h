@@ -74,7 +74,7 @@ namespace Cosmos
 		void GetFrameBufferSize(int32_t* width, int32_t* height);
 
 		// recreates the window
-		void Recreate();
+		void ResizeFramebuffer();
 
 		// returns the window's aspect ratio
 		float GetAspectRatio();
