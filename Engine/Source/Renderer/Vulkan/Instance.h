@@ -1,8 +1,15 @@
 #pragma once
 
-#include "Platform/Window.h"
+#include "Util/Memory.h"
 #include <volk.h>
+
 #include <vector>
+
+namespace Cosmos
+{
+	// forward declaration
+	class Window;
+}
 
 namespace Cosmos::Vulkan
 {

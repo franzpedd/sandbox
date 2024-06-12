@@ -1,6 +1,12 @@
 #include "epch.h"
 #include "Application.h"
 
+#include "Event.h"
+#include "Scene.h"
+#include "Platform/Window.h"
+#include "Renderer/Renderer.h"
+#include "UI/UI.h"
+
 namespace Cosmos
 {
 	Application::Application()

@@ -1,6 +1,7 @@
 #include "epch.h"
 #include "Shader.h"
 
+#include "Device.h"
 #include "Util/Logger.h"
 
 #if defined(_MSC_VER)

@@ -1,15 +1,24 @@
 #pragma once
 
-#include "Instance.h"
-#include "Platform/Window.h"
+#include "Util/Memory.h"
 
 #include <volk.h>
-#include "Wrapper/vma.h"
+#include "Wrapper/vma.h" // including vma after volk
 
 #include <optional>
+#include <vector>
+
+// forward declarations
+namespace Cosmos
+{
+	class Window;
+}
 
 namespace Cosmos::Vulkan
 {
+	// forward declarations
+	class Instance;
+	
 	class Device
 	{
 	public:

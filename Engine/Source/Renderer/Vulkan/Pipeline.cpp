@@ -1,6 +1,9 @@
 #include "epch.h"
 #include "Pipeline.h"
 
+#include "Device.h"
+#include "Renderpass.h"
+#include "Shader.h"
 #include "Util/Files.h"
 #include "Util/Logger.h"
 

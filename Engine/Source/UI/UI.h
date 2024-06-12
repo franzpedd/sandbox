@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Widget.h"
 #include "Util/Math.h"
+#include "Util/Memory.h"
 #include "Util/Stack.h"
 #include "Wrapper/imgui.h"
 
@@ -13,6 +13,8 @@ namespace Cosmos
 {
 	// forward declaration
 	class Application;
+	class Event;
+	class Widget;
 
 	class UI
 	{
@@ -42,6 +44,9 @@ namespace Cosmos
 		void Draw(void* commandBuffer);
 
 	public:
+
+		// adds a new widget into the ui
+		void AddWidget(Widget* widget);
 
 		// sets the minimum image count, used whenever the swapchain is resized and image count change
 		void SetImageCount(uint32_t count);

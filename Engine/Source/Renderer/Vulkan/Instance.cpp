@@ -1,6 +1,7 @@
 #include "epch.h"
 #include "Instance.h"
 
+#include "Platform/Window.h"
 #include "Util/Logger.h"
 
 namespace Cosmos::Vulkan

@@ -1,12 +1,16 @@
 #pragma once
 
-#include "Scene.h"
-#include "Platform/Window.h"
-#include "Renderer/Renderer.h"
-#include "UI/UI.h"
+#include "Util/Memory.h"
 
 namespace Cosmos
 {
+	// forward declarations
+	class Event;
+	class Renderer;
+	class Scene;
+	class UI;
+	class Window;
+
 	class Application
 	{
 	public:

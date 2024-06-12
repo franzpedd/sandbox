@@ -1,13 +1,19 @@
 #pragma once
 
 #include "Renderer/Vertex.h"
-#include "Renderpass.h"
-#include "Shader.h"
+#include "Util/Memory.h"
+#include <volk.h>
 
 #include <unordered_map>
 
 namespace Cosmos::Vulkan
 {
+    // forward declarations
+    class Device;
+    class Renderpass;
+    class RenderpassManager;
+    class Shader;
+
     class Pipeline
     {
     public:

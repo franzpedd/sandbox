@@ -3,8 +3,15 @@
 
 #include "Icons.h"
 #include "Theme.h"
+#include "Widget.h"
 #include "Core/Application.h"
+#include "Core/Event.h"
+#include "Platform/Window.h"
 #include "Renderer/Vulkan/VKRenderer.h"
+#include "Renderer/Vulkan/Device.h"
+#include "Renderer/Vulkan/Instance.h"
+#include "Renderer/Vulkan/Renderpass.h"
+#include "Renderer/Vulkan/Swapchain.h"
 #include "Util/Files.h"
 #include "Util/Logger.h"
 
@@ -31,7 +38,7 @@ namespace Cosmos
 	UI::UI(Application* application)
 		: mApplication(application)
 	{
-		std::dynamic_pointer_cast<VKRenderer>(mApplication->GetRenderer())->GetRenderpassManager()->Insert("ImGui", VK_SAMPLE_COUNT_1_BIT);
+		std::dynamic_pointer_cast<Vulkan::VKRenderer>(mApplication->GetRenderer())->GetRenderpassManager()->Insert("ImGui", VK_SAMPLE_COUNT_1_BIT);
 
 		CreateResources();
 		SetupConfiguration();
@@ -39,7 +46,7 @@ namespace Cosmos
 
 	UI::~UI()
 	{
-		vkDeviceWaitIdle(std::dynamic_pointer_cast<VKRenderer>(mApplication->GetRenderer())->GetDevice()->GetLogicalDevice());
+		vkDeviceWaitIdle(std::dynamic_pointer_cast<Vulkan::VKRenderer>(mApplication->GetRenderer())->GetDevice()->GetLogicalDevice());
 
 		ImGui_ImplVulkan_Shutdown();
 		ImGui_ImplSDL2_Shutdown();
@@ -83,9 +90,9 @@ namespace Cosmos
 		// resize the ui
 		if (event->GetType() == Event::Type::WindowResize)
 		{
-			auto device = std::dynamic_pointer_cast<VKRenderer>(mApplication->GetRenderer())->GetDevice();
-			auto swapchain = std::dynamic_pointer_cast<VKRenderer>(mApplication->GetRenderer())->GetSwapchain();
-			auto& renderpass = std::dynamic_pointer_cast<VKRenderer>(mApplication->GetRenderer())->GetRenderpassManager()->GetRenderpassesRef()["ImGui"]->GetSpecificationRef();
+			auto device = std::dynamic_pointer_cast<Vulkan::VKRenderer>(mApplication->GetRenderer())->GetDevice();
+			auto swapchain = std::dynamic_pointer_cast<Vulkan::VKRenderer>(mApplication->GetRenderer())->GetSwapchain();
+			auto& renderpass = std::dynamic_pointer_cast<Vulkan::VKRenderer>(mApplication->GetRenderer())->GetRenderpassManager()->GetRenderpassesRef()["ImGui"]->GetSpecificationRef();
 
 			vkDeviceWaitIdle(device->GetLogicalDevice());
 
@@ -123,6 +130,11 @@ namespace Cosmos
 	void UI::Draw(void* commandBuffer)
 	{
 		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), (VkCommandBuffer)commandBuffer);
+	}
+
+	void UI::AddWidget(Widget* widget)
+	{
+		mWidgets.Push(widget);
 	}
 
 	void UI::SetImageCount(uint32_t count)
@@ -247,7 +259,7 @@ namespace Cosmos
 			{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
 		};
 
-		auto& vkRenderer = std::dynamic_pointer_cast<VKRenderer>(mApplication->GetRenderer());
+		auto& vkRenderer = std::dynamic_pointer_cast<Vulkan::VKRenderer>(mApplication->GetRenderer());
 		auto& renderpass = vkRenderer->GetRenderpassManager()->GetRenderpassesRef()["ImGui"]->GetSpecificationRef();
 
 		VkDescriptorPoolCreateInfo poolCI = {};
@@ -282,7 +294,7 @@ namespace Cosmos
 	
 	void UI::CreateResources()
 	{
-		auto& vkRenderer = std::dynamic_pointer_cast<VKRenderer>(mApplication->GetRenderer());
+		auto& vkRenderer = std::dynamic_pointer_cast<Vulkan::VKRenderer>(mApplication->GetRenderer());
 		auto& renderpass = vkRenderer->GetRenderpassManager()->GetRenderpassesRef()["ImGui"]->GetSpecificationRef();
 
 		// render pass

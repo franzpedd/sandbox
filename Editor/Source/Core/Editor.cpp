@@ -12,9 +12,9 @@ namespace Cosmos
 		mImDemo = new ImDemo();
 		mViewport = new Viewport(mWindow, mRenderer);
 
-		mUI->GetWidgetStackRef().Push(mDockspace);
-		mUI->GetWidgetStackRef().Push(mImDemo);
-		mUI->GetWidgetStackRef().Push(mViewport);
+		mUI->AddWidget(mDockspace); // dockspace must be the first, since we're going to render the scene into the viewport
+		mUI->AddWidget(mImDemo);
+		mUI->AddWidget(mViewport);
 	}
 
 	Editor::~Editor()

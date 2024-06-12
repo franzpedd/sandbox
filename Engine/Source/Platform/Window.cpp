@@ -2,6 +2,7 @@
 #include "Window.h"
 
 #include "Core/Application.h"
+#include "Core/Event.h"
 #include "Platform/Detection.h"
 #include "UI/UI.h"
 #include "Util/Logger.h"

@@ -1,9 +1,15 @@
 #pragma once
 
-#include "Device.h"
+#include "Util/Memory.h"
+#include <volk.h>
+#include <vector>
+#include <string>
 
 namespace Cosmos::Vulkan
 {
+	// forward declaration
+	class Device;
+
 	class Shader
 	{
 	public:

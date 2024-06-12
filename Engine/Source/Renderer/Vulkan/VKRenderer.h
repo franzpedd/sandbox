@@ -1,24 +1,31 @@
 #pragma once
 
 #include "Renderer/Renderer.h"
-#include "Instance.h"
-#include "Device.h"
-#include "Renderpass.h"
-#include "Swapchain.h"
-#include "Pipeline.h"
+#include <volk.h>
+#include <vector>
 
+// forward declarations
 namespace Cosmos
+{
+	class Window;
+}
+
+namespace Cosmos::Vulkan
 {
 	// forward declarations
 	class Application;
-	class Window;
+	class Device;
+	class Instance;
+	class PipelineLibrary;
+	class RenderpassManager;
+	class Swapchain;
 
 	class VKRenderer : public Renderer
 	{
 	public:
 
 		// constructor
-		VKRenderer(Application* application, Shared<Window> window);
+		VKRenderer(Cosmos::Application* application, Shared<Cosmos::Window> window);
 
 		// destructor
 		virtual ~VKRenderer();

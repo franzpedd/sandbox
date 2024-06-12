@@ -1,10 +1,25 @@
 #pragma once
 
-#include "Device.h"
-#include "Renderpass.h"
+#include "Util/Memory.h"
+
+#include <volk.h>
+#include "Wrapper/vma.h" // include vma after volk
+
+#include <vector>
+
+// forward declarations
+namespace Cosmos
+{
+	class Window;
+}
 
 namespace Cosmos::Vulkan
 {
+	// forward declarations
+	class Device;
+	class Renderpass;
+	class RenderpassManager;
+
 	class Swapchain
 	{
 	public:

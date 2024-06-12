@@ -1,12 +1,13 @@
 #pragma once
 
-#include "Entity/Unique/Camera.h"
 #include "Util/Memory.h"
 
 namespace Cosmos
 {
 	// forward declarations
 	class Application;
+	class Camera;
+	class Event;
 	class Window;
 
 	class Renderer

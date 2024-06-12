@@ -1,6 +1,7 @@
 #include "epch.h"
 #include "Renderpass.h"
 
+#include "Device.h"
 #include "Util/Logger.h"
 
 namespace Cosmos::Vulkan

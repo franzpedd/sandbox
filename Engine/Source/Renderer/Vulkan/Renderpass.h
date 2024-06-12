@@ -1,12 +1,17 @@
 #pragma once
 
-#include "Device.h"
+#include "Util/Memory.h"
+#include <volk.h>
 
+#include <string>
 #include <unordered_map>
 #include <vector>
 
 namespace Cosmos::Vulkan
 {
+	// forward declarations
+	class Device;
+
 	class Renderpass
 	{
 	public:

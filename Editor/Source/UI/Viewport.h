@@ -1,5 +1,6 @@
 #pragma once
 
+#define COSMOS_RENDERER_VULKAN
 #include <Engine.h>
 
 namespace Cosmos

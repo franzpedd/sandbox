@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Core/Event.h"
+#include "Input.h"
 #include "Util/Memory.h"
 #include <chrono>
 
@@ -11,6 +11,7 @@ namespace Cosmos
 {
 	// forward declaration
 	class Application;
+	class Event;
 
 	class Window
 	{

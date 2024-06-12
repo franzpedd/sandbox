@@ -12,8 +12,8 @@ namespace Cosmos
 
 	Viewport::~Viewport()
 	{
-		auto& swapchain = std::dynamic_pointer_cast<VKRenderer>(mRenderer)->GetSwapchain();
-		auto& device = std::dynamic_pointer_cast<VKRenderer>(mRenderer)->GetDevice();
+		auto& swapchain = std::dynamic_pointer_cast<Vulkan::VKRenderer>(mRenderer)->GetSwapchain();
+		auto& device = std::dynamic_pointer_cast<Vulkan::VKRenderer>(mRenderer)->GetDevice();
 		vkDeviceWaitIdle(device->GetLogicalDevice());
 		
 		vkDestroySampler(device->GetLogicalDevice(), mSampler, nullptr);
@@ -88,9 +88,9 @@ namespace Cosmos
 
 		if (event->GetType() == Event::Type::WindowResize)
 		{
-			auto& device = std::dynamic_pointer_cast<VKRenderer>(mRenderer)->GetDevice();
-			auto& swapchain = std::dynamic_pointer_cast<VKRenderer>(mRenderer)->GetSwapchain();
-			auto& renderpass = std::dynamic_pointer_cast<VKRenderer>(mRenderer)->GetRenderpassManager()->GetRenderpassesRef()["Viewport"]->GetSpecificationRef();
+			auto& device = std::dynamic_pointer_cast<Vulkan::VKRenderer>(mRenderer)->GetDevice();
+			auto& swapchain = std::dynamic_pointer_cast<Vulkan::VKRenderer>(mRenderer)->GetSwapchain();
+			auto& renderpass = std::dynamic_pointer_cast<Vulkan::VKRenderer>(mRenderer)->GetRenderpassManager()->GetRenderpassesRef()["Viewport"]->GetSpecificationRef();
 
 			vkDestroyImageView(device->GetLogicalDevice(), mDepthView, nullptr);
 			vmaFreeMemory(device->GetAllocator(), mDepthMemory);
@@ -115,12 +115,13 @@ namespace Cosmos
 	void Viewport::CreateRendererResources()
 	{
 		// sets the main renderpass to the viewport
-		std::dynamic_pointer_cast<VKRenderer>(mRenderer)->GetRenderpassManager()->Insert("Viewport", VK_SAMPLE_COUNT_1_BIT);
-		std::dynamic_pointer_cast<VKRenderer>(mRenderer)->GetRenderpassManager()->SetMain("Viewport");
-		auto& renderpass = std::dynamic_pointer_cast<VKRenderer>(mRenderer)->GetRenderpassManager()->GetRenderpassesRef()["Viewport"]->GetSpecificationRef();
+		std::dynamic_pointer_cast<Vulkan::VKRenderer>(mRenderer)->GetRenderpassManager()->Insert("Viewport", VK_SAMPLE_COUNT_1_BIT);
+		std::dynamic_pointer_cast<Vulkan::VKRenderer>(mRenderer)->GetRenderpassManager()->SetMain("Viewport");
+		auto& renderpass = std::dynamic_pointer_cast<Vulkan::VKRenderer>(mRenderer)->GetRenderpassManager()->GetRenderpassesRef()["Viewport"]->GetSpecificationRef();
+		auto& device = std::dynamic_pointer_cast<Vulkan::VKRenderer>(mRenderer)->GetDevice();
 
 		mSurfaceFormat = VK_FORMAT_R8G8B8A8_SRGB;
-		mDepthFormat = std::dynamic_pointer_cast<VKRenderer>(mRenderer)->GetDevice()->FindSuitableDepthFormat();
+		mDepthFormat = device->FindSuitableDepthFormat();
 
 		// create render pass
 		{
@@ -191,22 +192,22 @@ namespace Cosmos
 			renderPassCI.pSubpasses = &subpassDescription;
 			renderPassCI.dependencyCount = (uint32_t)dependencies.size();
 			renderPassCI.pDependencies = dependencies.data();
-			COSMOS_ASSERT(vkCreateRenderPass(std::dynamic_pointer_cast<VKRenderer>(mRenderer)->GetDevice()->GetLogicalDevice(), &renderPassCI, nullptr, &renderpass.renderPass) == VK_SUCCESS, "Failed to create renderpass");
+			COSMOS_ASSERT(vkCreateRenderPass(device->GetLogicalDevice(), &renderPassCI, nullptr, &renderpass.renderPass) == VK_SUCCESS, "Failed to create renderpass");
 		}
 		
 		// command pool
 		{
-			Vulkan::Device::QueueFamilyIndices indices = std::dynamic_pointer_cast<VKRenderer>(mRenderer)->GetDevice()->FindQueueFamilies
+			Vulkan::Device::QueueFamilyIndices indices = std::dynamic_pointer_cast<Vulkan::VKRenderer>(mRenderer)->GetDevice()->FindQueueFamilies
 			(
-				std::dynamic_pointer_cast<VKRenderer>(mRenderer)->GetDevice()->GetPhysicalDevice(),
-				std::dynamic_pointer_cast<VKRenderer>(mRenderer)->GetDevice()->GetSurface()
+				device->GetPhysicalDevice(),
+				device->GetSurface()
 			);
 
 			VkCommandPoolCreateInfo cmdPoolInfo = {};
 			cmdPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 			cmdPoolInfo.queueFamilyIndex = indices.graphics.value();
 			cmdPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-			COSMOS_ASSERT(vkCreateCommandPool(std::dynamic_pointer_cast<VKRenderer>(mRenderer)->GetDevice()->GetLogicalDevice(), &cmdPoolInfo, nullptr, &renderpass.commandPool) == VK_SUCCESS, "Failed to create command pool");
+			COSMOS_ASSERT(vkCreateCommandPool(device->GetLogicalDevice(), &cmdPoolInfo, nullptr, &renderpass.commandPool) == VK_SUCCESS, "Failed to create command pool");
 		}
 
 		// command buffers
@@ -218,7 +219,7 @@ namespace Cosmos
 			cmdBufferAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 			cmdBufferAllocInfo.commandPool = renderpass.commandPool;
 			cmdBufferAllocInfo.commandBufferCount = (uint32_t)renderpass.commandBuffers.size();
-			COSMOS_ASSERT(vkAllocateCommandBuffers(std::dynamic_pointer_cast<VKRenderer>(mRenderer)->GetDevice()->GetLogicalDevice(), &cmdBufferAllocInfo, renderpass.commandBuffers.data()) == VK_SUCCESS, "Failed to allocate command buffers");
+			COSMOS_ASSERT(vkAllocateCommandBuffers(device->GetLogicalDevice(), &cmdBufferAllocInfo, renderpass.commandBuffers.data()) == VK_SUCCESS, "Failed to allocate command buffers");
 		}
 
 		// sampler
@@ -231,26 +232,26 @@ namespace Cosmos
 			samplerCI.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
 			samplerCI.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
 			samplerCI.anisotropyEnable = VK_TRUE;
-			samplerCI.maxAnisotropy = std::dynamic_pointer_cast<VKRenderer>(mRenderer)->GetDevice()->GetPropertiesRef().limits.maxSamplerAnisotropy;
+			samplerCI.maxAnisotropy = device->GetPropertiesRef().limits.maxSamplerAnisotropy;
 			samplerCI.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
 			samplerCI.unnormalizedCoordinates = VK_FALSE;
 			samplerCI.compareEnable = VK_FALSE;
 			samplerCI.compareOp = VK_COMPARE_OP_ALWAYS;
 			samplerCI.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-			COSMOS_ASSERT(vkCreateSampler(std::dynamic_pointer_cast<VKRenderer>(mRenderer)->GetDevice()->GetLogicalDevice(), &samplerCI, nullptr, &mSampler) == VK_SUCCESS, "Failed to create sampler");
+			COSMOS_ASSERT(vkCreateSampler(device->GetLogicalDevice(), &samplerCI, nullptr, &mSampler) == VK_SUCCESS, "Failed to create sampler");
 		}
 
 		// framebuffers are directly tied to the renderpass, therefore we must create all it's resources
 		CreateFramebufferResources();
 
 		// recreate all global pipelines to be handled with the viewport renderpass
-		std::dynamic_pointer_cast<VKRenderer>(mRenderer)->GetPipelineLibrary()->RecreatePipelines();
+		std::dynamic_pointer_cast<Vulkan::VKRenderer>(mRenderer)->GetPipelineLibrary()->RecreatePipelines();
 	}
 
 	void Viewport::CreateFramebufferResources()
 	{
-		size_t imagesSize = std::dynamic_pointer_cast<VKRenderer>(mRenderer)->GetSwapchain()->GetImagesRef().size();
-		Shared<VKRenderer> vkRenderer = std::dynamic_pointer_cast<VKRenderer>(mRenderer);
+		size_t imagesSize = std::dynamic_pointer_cast<Vulkan::VKRenderer>(mRenderer)->GetSwapchain()->GetImagesRef().size();
+		Shared<Vulkan::VKRenderer> vkRenderer = std::dynamic_pointer_cast<Vulkan::VKRenderer>(mRenderer);
 		auto& renderpass = vkRenderer->GetRenderpassManager()->GetRenderpassesRef()["Viewport"]->GetSpecificationRef();
 
 		// depth buffer
@@ -330,8 +331,8 @@ namespace Cosmos
 				framebufferCI.renderPass = renderpass.renderPass;
 				framebufferCI.attachmentCount = (uint32_t)attachments.size();
 				framebufferCI.pAttachments = attachments.data();
-				framebufferCI.width = std::dynamic_pointer_cast<VKRenderer>(mRenderer)->GetSwapchain()->GetExtent().width;
-				framebufferCI.height = std::dynamic_pointer_cast<VKRenderer>(mRenderer)->GetSwapchain()->GetExtent().height;
+				framebufferCI.width = std::dynamic_pointer_cast<Vulkan::VKRenderer>(mRenderer)->GetSwapchain()->GetExtent().width;
+				framebufferCI.height = std::dynamic_pointer_cast<Vulkan::VKRenderer>(mRenderer)->GetSwapchain()->GetExtent().height;
 				framebufferCI.layers = 1;
 				COSMOS_ASSERT(vkCreateFramebuffer(vkRenderer->GetDevice()->GetLogicalDevice(), &framebufferCI, nullptr, &renderpass.frameBuffers[i]) == VK_SUCCESS, "Failed to create framebuffer");
 			}

@@ -1,6 +1,9 @@
 #include "epch.h"
 #include "Swapchain.h"
 
+#include "Device.h"
+#include "Renderpass.h"
+#include "Platform/Window.h"
 #include "Util/Logger.h"
 
 #include <algorithm>

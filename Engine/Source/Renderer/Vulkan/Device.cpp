@@ -1,6 +1,8 @@
 #include "epch.h"
 #include "Device.h"
 
+#include "Instance.h"
+#include "Platform/Window.h"
 #include "Util/Logger.h"
 
 #include <set>

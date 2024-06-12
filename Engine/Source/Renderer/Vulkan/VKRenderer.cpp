@@ -1,15 +1,24 @@
 #include "epch.h"
 #include "VKRenderer.h"
 
+#include "Instance.h"
+#include "Device.h"
+#include "Renderpass.h"
+#include "Swapchain.h"
+#include "Pipeline.h"
 #include "Core/Application.h"
+#include "Core/Event.h"
+#include "Core/Scene.h"
+#include "Entity/Unique/Camera.h"
 #include "Platform/Window.h"
+#include "UI/UI.h"
 #include "Util/Logger.h"
 
 #include <array>
 
-namespace Cosmos
+namespace Cosmos::Vulkan
 {
-	VKRenderer::VKRenderer(Application* application, Shared<Window> window)
+	VKRenderer::VKRenderer(Cosmos::Application* application, Shared<Cosmos::Window> window)
 		: Renderer(application, window)
 	{
 		mInstance = CreateShared<Vulkan::Instance>(mWindow, "Cosmos", "Application", true);

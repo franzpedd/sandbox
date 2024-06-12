@@ -1,6 +1,7 @@
 #include "epch.h"
 #include "Camera.h"
 
+#include "Core/Event.h"
 #include "Platform/Window.h"
 
 namespace Cosmos

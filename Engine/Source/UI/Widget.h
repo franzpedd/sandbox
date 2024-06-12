@@ -1,16 +1,18 @@
 #pragma once
 
-#include "Core/Event.h"
 #include "Util/Memory.h"
 
 namespace Cosmos
 {
+	// forward declaration
+	class Event;
+
 	class Widget
 	{
 	public:
 
 		// constructor
-		Widget(const char* name = "Widget") : mName(name) {}
+		Widget(const char* name = "Widget");
 
 		// destructor
 		virtual ~Widget() = default;
@@ -21,13 +23,13 @@ namespace Cosmos
 	public:
 
 		// for user interface drawing
-		virtual void OnUpdate() {}
+		virtual void OnUpdate();
 
 		// for renderer drawing
-		virtual void OnRender() {}
+		virtual void OnRender();
 
 		// // called when the window is resized
-		virtual void OnEvent(Shared<Event> event) {}
+		virtual void OnEvent(Shared<Event> event);
 
 	private:
 
