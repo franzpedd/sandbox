@@ -26,19 +26,11 @@ namespace Cosmos::Vulkan
 		mRenderpassManager = CreateShared<Vulkan::RenderpassManager>(mDevice);
 		mSwapchain = CreateShared<Vulkan::Swapchain>(mWindow, mDevice, mRenderpassManager, mConcurrentlyRenderedFrames);
 		mPipelineLibrary = CreateShared<Vulkan::PipelineLibrary>(mDevice, mRenderpassManager);
-		CreateSyncSystem();
 	}
 
 	VKRenderer::~VKRenderer()
 	{
-		vkDeviceWaitIdle(mDevice->GetLogicalDevice());
-
-		for (size_t i = 0; i < mConcurrentlyRenderedFrames; i++)
-		{
-			vkDestroyFence(mDevice->GetLogicalDevice(), mInFlightFences[i], nullptr);
-			vkDestroySemaphore(mDevice->GetLogicalDevice(), mRenderFinishedSemaphores[i], nullptr);
-			vkDestroySemaphore(mDevice->GetLogicalDevice(), mImageAvailableSemaphores[i], nullptr);
-		}
+		
 	}
 
 	void VKRenderer::OnUpdate()
@@ -47,8 +39,8 @@ namespace Cosmos::Vulkan
 		Renderer::OnUpdate(); 
 
 		// aquire image from swapchain
-		vkWaitForFences(mDevice->GetLogicalDevice(), 1, &mInFlightFences[mCurrentFrame], VK_TRUE, UINT64_MAX);
-		VkResult res = vkAcquireNextImageKHR(mDevice->GetLogicalDevice(), mSwapchain->GetSwapchain(), UINT64_MAX, mImageAvailableSemaphores[mCurrentFrame], VK_NULL_HANDLE, &mImageIndex);
+		vkWaitForFences(mDevice->GetLogicalDevice(), 1, &mSwapchain->GetInFlightFencesRef()[mCurrentFrame], VK_TRUE, UINT64_MAX);
+		VkResult res = vkAcquireNextImageKHR(mDevice->GetLogicalDevice(), mSwapchain->GetSwapchain(), UINT64_MAX, mSwapchain->GetAvailableSemaphoresRef()[mCurrentFrame], VK_NULL_HANDLE, &mImageIndex);
 
 		if (res == VK_ERROR_OUT_OF_DATE_KHR)
 		{
@@ -61,15 +53,15 @@ namespace Cosmos::Vulkan
 			COSMOS_ASSERT(false, "Failed to acquired next swapchain image");
 		}
 
-		vkResetFences(mDevice->GetLogicalDevice(), 1, &mInFlightFences[mCurrentFrame]);
+		vkResetFences(mDevice->GetLogicalDevice(), 1, &mSwapchain->GetInFlightFencesRef()[mCurrentFrame]);
 
 		// register draw calls based on the configuration of previously configured renderpasses
 		ManageRenderpasses();
 
 		// submits the draw calls into the graphics queue, we're not using any compute queue at the momment
 		VkSwapchainKHR swapChains[] = { mSwapchain->GetSwapchain() };
-		VkSemaphore waitSemaphores[] = { mImageAvailableSemaphores[mCurrentFrame] };
-		VkSemaphore signalSemaphores[] = { mRenderFinishedSemaphores[mCurrentFrame] };
+		VkSemaphore waitSemaphores[] = { mSwapchain->GetAvailableSemaphoresRef()[mCurrentFrame] };
+		VkSemaphore signalSemaphores[] = { mSwapchain->GetFinishedSempahoresRef()[mCurrentFrame] };
 		VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 		std::vector<VkCommandBuffer> submitCommandBuffers = { mRenderpassManager->GetRenderpassesRef()["Swapchain"]->GetSpecificationRef().commandBuffers[mCurrentFrame] };
 
@@ -93,7 +85,7 @@ namespace Cosmos::Vulkan
 		submitInfo.pCommandBuffers = submitCommandBuffers.data();
 		submitInfo.signalSemaphoreCount = 1;
 		submitInfo.pSignalSemaphores = signalSemaphores;
-		COSMOS_ASSERT(vkQueueSubmit(mDevice->GetGraphicsQueue(), 1, &submitInfo, mInFlightFences[mCurrentFrame]) == VK_SUCCESS, "Failed to submit draw command");
+		COSMOS_ASSERT(vkQueueSubmit(mDevice->GetGraphicsQueue(), 1, &submitInfo, mSwapchain->GetInFlightFencesRef()[mCurrentFrame]) == VK_SUCCESS, "Failed to submit draw command");
 
 		// presents the image
 		VkPresentInfoKHR presentInfo = {};
@@ -232,6 +224,7 @@ namespace Cosmos::Vulkan
 			vkCmdSetScissor(cmdBuffer, 0, 1, &scissor);
 
 			// render scene and special widgets
+			mApplication->GetUI()->OnRender();
 			mApplication->GetScene()->OnRender();
 
 			vkCmdEndRenderPass(cmdBuffer);
@@ -272,30 +265,6 @@ namespace Cosmos::Vulkan
 			vkCmdEndRenderPass(cmdBuffer);
 
 			COSMOS_ASSERT(vkEndCommandBuffer(cmdBuffer) == VK_SUCCESS, "Failed to end command buffer recording");
-		}
-	}
-
-	void VKRenderer::CreateSyncSystem()
-	{
-		mImageAvailableSemaphores.resize(mConcurrentlyRenderedFrames);
-		mRenderFinishedSemaphores.resize(mConcurrentlyRenderedFrames);
-		mInFlightFences.resize(mConcurrentlyRenderedFrames);
-
-		VkSemaphoreCreateInfo semaphoreCI = {};
-		semaphoreCI.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-		semaphoreCI.pNext = nullptr;
-		semaphoreCI.flags = 0;
-
-		VkFenceCreateInfo fenceCI = {};
-		fenceCI.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-		fenceCI.pNext = nullptr;
-		fenceCI.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-
-		for (size_t i = 0; i < mConcurrentlyRenderedFrames; i++)
-		{
-			COSMOS_ASSERT(vkCreateSemaphore(mDevice->GetLogicalDevice(), &semaphoreCI, nullptr, &mImageAvailableSemaphores[i]) == VK_SUCCESS, "Failed to create image available semaphore");
-			COSMOS_ASSERT(vkCreateSemaphore(mDevice->GetLogicalDevice(), &semaphoreCI, nullptr, &mRenderFinishedSemaphores[i]) == VK_SUCCESS, "Failed to create render finished semaphore");
-			COSMOS_ASSERT(vkCreateFence(mDevice->GetLogicalDevice(), &fenceCI, nullptr, &mInFlightFences[i]) == VK_SUCCESS, "Failed to create in flight fence");
 		}
 	}
 }

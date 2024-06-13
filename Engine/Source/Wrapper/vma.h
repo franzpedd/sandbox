@@ -15,4 +15,3 @@
 #if defined(PLATFORM_WINDOWS)
 #pragma warning(pop)
 #endif
-

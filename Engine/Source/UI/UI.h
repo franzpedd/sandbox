@@ -75,6 +75,11 @@ namespace Cosmos
 		// create vulkan resources
 		void CreateResources();
 
+	public: // custom widgets
+
+		// custom checkbox that slides into enabled/disabled
+		static bool CheckboxSliderEx(const char* label, bool* v);
+
 	private:
 
 		Application* mApplication;

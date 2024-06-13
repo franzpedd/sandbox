@@ -148,6 +148,9 @@ namespace Cosmos::Vulkan
 
     std::vector<VkVertexInputBindingDescription> Pipeline::GetBindingDescriptions()
     {
+        if (mSpecification.notPassingVertexData)
+            return std::vector<VkVertexInputBindingDescription>{};
+
         mBindingDescriptions.clear();
         mBindingDescriptions.resize(1);
 

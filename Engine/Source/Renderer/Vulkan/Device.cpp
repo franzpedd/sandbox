@@ -110,49 +110,39 @@ namespace Cosmos::Vulkan
 		return 0;
 	}
 
-	VkResult Device::CreateBuffer(VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkDeviceSize size, VkBuffer buffer, VmaAllocation allocation, void* data)
+	VkResult Device::CreateBuffer(VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkDeviceSize size, VkBuffer* buffer, VmaAllocation* memory, void* data)
 	{
-		COSMOS_LOG(Logger::Warn, "Create a allocation pool with all allocated stuff?");
-
 		// specify buffer
+		VmaAllocationCreateInfo allocCI = {};
+		allocCI.usage = VMA_MEMORY_USAGE_AUTO;
+		allocCI.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+
+		VmaAllocationInfo allocInfo = {};
+
 		VkBufferCreateInfo bufferCI = {};
 		bufferCI.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 		bufferCI.size = size;
 		bufferCI.usage = usage;
 		bufferCI.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		COSMOS_ASSERT(vmaCreateBuffer(mAllocator, &bufferCI, &allocCI, buffer, memory, &allocInfo) == VK_SUCCESS, "Failed to create buffer");
 
-		// specify vma info
-		VmaAllocationInfo vmaI = {};
-		VmaAllocationCreateInfo vmaCI = {};
-		vmaCI.usage = VMA_MEMORY_USAGE_AUTO;
+		VkMemoryPropertyFlags memPropFlags;
+		vmaGetAllocationMemoryProperties(mAllocator, *memory, &memPropFlags);
 
-		// data is not null, must map the buffer and copy the data
-		if (data != nullptr)
+		if (memPropFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT && data != nullptr)
 		{
-			vmaCI.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
-			
-			// create mapped buffer
-			COSMOS_ASSERT(vmaCreateBuffer(mAllocator, &bufferCI, &vmaCI, &buffer, &allocation, &vmaI) == VK_SUCCESS, "Failed to create buffer");
-			memcpy(vmaI.pMappedData, data, size);
+			void* mapped = nullptr;
+			COSMOS_ASSERT(vmaMapMemory(mAllocator, *memory, &mapped) == VK_SUCCESS, "Failed to map memory");
+			memcpy(mapped, data, size);
 
-			// if host coherency hasn't been requested, do a manual flush to make writes visible
 			if ((properties & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) == 0)
 			{
-				vmaFlushAllocation(mAllocator, allocation, 0, size);
+				vmaFlushAllocation(mAllocator, *memory, 0, size);
 			}
-
-			// unmap buffer
-			vmaUnmapMemory(mAllocator, allocation);
+			
+			vmaUnmapMemory(mAllocator, *memory);
 		}
 
-		else
-		{
-			// create buffer
-			COSMOS_ASSERT(vmaCreateBuffer(mAllocator, &bufferCI, &vmaCI, &buffer, &allocation, nullptr) == VK_SUCCESS, "Failed to create buffer");
-		}
-
-		// link buffer with allocated memory
-		COSMOS_ASSERT(vmaBindBufferMemory(mAllocator, allocation, buffer) == VK_SUCCESS, "Failed to bind buffer with memory");
 		return VK_SUCCESS;
 	}
 

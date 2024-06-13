@@ -86,7 +86,7 @@ namespace Cosmos::Vulkan
 		uint32_t GetMemoryType(uint32_t bits, VkMemoryPropertyFlags properties, VkBool32* found = nullptr);
 
 		// creates a memory buffer on gpu based on parameters
-		VkResult CreateBuffer(VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkDeviceSize size, VkBuffer buffer, VmaAllocation allocation, void* data = nullptr);
+		VkResult CreateBuffer(VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkDeviceSize size, VkBuffer* buffer, VmaAllocation* memory, void* data = nullptr);
 
 	public: // command buffer
 

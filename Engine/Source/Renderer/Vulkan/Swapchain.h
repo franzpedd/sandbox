@@ -68,6 +68,15 @@ namespace Cosmos::Vulkan
 		// returns the swapchain's depth view
 		inline VkImageView GetDepthView() const { return mDepthView; }
 
+		// returns a reference to the available image semaphores
+		inline std::vector<VkSemaphore>& GetAvailableSemaphoresRef() { return mImageAvailableSemaphores; }
+
+		// returns a reference to the finished render semaphores
+		inline std::vector<VkSemaphore>& GetFinishedSempahoresRef() { return mRenderFinishedSemaphores; }
+
+		// returns a reference to the in flight fences
+		inline std::vector<VkFence>& GetInFlightFencesRef() { return mInFlightFences; }
+
 	public:
 
 		// creates the swapchain
@@ -90,6 +99,9 @@ namespace Cosmos::Vulkan
 
 		// fills all information about the swapchain details
 		Details QueryDetails();
+
+		// creates the syncronization system between gpu-cpu image-rendering
+		void CreateSyncSystem();
 
 	public:
 
@@ -131,5 +143,10 @@ namespace Cosmos::Vulkan
 		VkImage mDepthImage = VK_NULL_HANDLE;
 		VmaAllocation mDepthMemory = VK_NULL_HANDLE;
 		VkImageView mDepthView = VK_NULL_HANDLE;
+
+		// sync system
+		std::vector<VkSemaphore> mImageAvailableSemaphores;
+		std::vector<VkSemaphore> mRenderFinishedSemaphores;
+		std::vector<VkFence> mInFlightFences;
 	};
 }

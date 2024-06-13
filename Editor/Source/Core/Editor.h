@@ -5,8 +5,11 @@
 namespace Cosmos
 {
 	// forward declarations
+	class Console;
 	class Dockspace;
+	class Grid;
 	class ImDemo;
+	class Menubar;
 	class Viewport;
 
 	class Editor : public Application
@@ -21,8 +24,11 @@ namespace Cosmos
 
 	private:
 
+		Console* mConsole;
 		Dockspace* mDockspace;
+		Grid* mGrid;
 		ImDemo* mImDemo;
+		Menubar* mMenubar;
 		Viewport* mViewport;
 	};
 }

@@ -25,10 +25,21 @@ namespace Cosmos::Vulkan
 
 		CreateCommandPool();
 		CreateCommandBuffers();
+
+		CreateSyncSystem();
 	}
 
 	Swapchain::~Swapchain()
 	{
+		vkDeviceWaitIdle(mDevice->GetLogicalDevice());
+		
+		for (size_t i = 0; i < mMaxFrames; i++)
+		{
+			vkDestroyFence(mDevice->GetLogicalDevice(), mInFlightFences[i], nullptr);
+			vkDestroySemaphore(mDevice->GetLogicalDevice(), mRenderFinishedSemaphores[i], nullptr);
+			vkDestroySemaphore(mDevice->GetLogicalDevice(), mImageAvailableSemaphores[i], nullptr);
+		}
+
 		vkDestroyImageView(mDevice->GetLogicalDevice(), mDepthView, nullptr);
 		vmaDestroyImage(mDevice->GetAllocator(), mDepthImage, mDepthMemory);
 
@@ -309,6 +320,30 @@ namespace Cosmos::Vulkan
 		}
 
 		return details;
+	}
+
+	void Swapchain::CreateSyncSystem()
+	{
+		mImageAvailableSemaphores.resize(mMaxFrames);
+		mRenderFinishedSemaphores.resize(mMaxFrames);
+		mInFlightFences.resize(mMaxFrames);
+
+		VkSemaphoreCreateInfo semaphoreCI = {};
+		semaphoreCI.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+		semaphoreCI.pNext = nullptr;
+		semaphoreCI.flags = 0;
+
+		VkFenceCreateInfo fenceCI = {};
+		fenceCI.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+		fenceCI.pNext = nullptr;
+		fenceCI.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+		for (size_t i = 0; i < mMaxFrames; i++)
+		{
+			COSMOS_ASSERT(vkCreateSemaphore(mDevice->GetLogicalDevice(), &semaphoreCI, nullptr, &mImageAvailableSemaphores[i]) == VK_SUCCESS, "Failed to create image available semaphore");
+			COSMOS_ASSERT(vkCreateSemaphore(mDevice->GetLogicalDevice(), &semaphoreCI, nullptr, &mRenderFinishedSemaphores[i]) == VK_SUCCESS, "Failed to create render finished semaphore");
+			COSMOS_ASSERT(vkCreateFence(mDevice->GetLogicalDevice(), &fenceCI, nullptr, &mInFlightFences[i]) == VK_SUCCESS, "Failed to create in flight fence");
+		}
 	}
 
 	void Swapchain::CreateCommandPool()

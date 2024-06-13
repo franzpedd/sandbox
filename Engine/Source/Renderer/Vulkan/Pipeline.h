@@ -20,12 +20,13 @@ namespace Cosmos::Vulkan
 
         struct Specification
         {
-            // these must be created before creating the VKPipeline
-            Shared<Renderpass> renderPass;
+            // these must be created before creating the Pipeline
+            Shared<Renderpass> renderPass;                              // current render pass that the pipeline will be applyed to
             Shared<Shader> vertexShader;
             Shared<Shader> fragmentShader;
-            std::vector<Vertex::Component> vertexComponents = {};
-            std::vector<VkDescriptorSetLayoutBinding> bindings = {};
+            std::vector<Vertex::Component> vertexComponents = {};       // components the vertex have
+            bool notPassingVertexData = false;                          // enable this when not passing vertex data to the shader
+            std::vector<VkDescriptorSetLayoutBinding> bindings = {};    // binding data (buffer, textures, etc)
 
             // these will be auto generated, but can be previously modified between Pipeline constructor and Build for customization
             std::vector<VkDynamicState> dynamicStates{ VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };

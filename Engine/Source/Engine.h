@@ -13,6 +13,7 @@
 #include "Platform/Window.h"
 
 // renderer
+#include "Renderer/Buffer.h"
 #include "Renderer/Renderer.h"
 #include "Renderer/Vertex.h"
 

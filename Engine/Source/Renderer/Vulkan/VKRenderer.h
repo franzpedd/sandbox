@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Renderer/Renderer.h"
-#include <volk.h>
 #include <vector>
 
 // forward declarations
@@ -58,9 +57,6 @@ namespace Cosmos::Vulkan
 		// organize the render passes order into the draw command
 		void ManageRenderpasses();
 
-		// creates the syncronization system used to render ready images
-		void CreateSyncSystem();
-
 	private:		
 
 		Shared<Vulkan::Instance> mInstance;
@@ -68,9 +64,5 @@ namespace Cosmos::Vulkan
 		Shared<Vulkan::RenderpassManager> mRenderpassManager;
 		Shared<Vulkan::Swapchain> mSwapchain;
 		Shared<Vulkan::PipelineLibrary> mPipelineLibrary;
-
-		std::vector<VkSemaphore> mImageAvailableSemaphores;
-		std::vector<VkSemaphore> mRenderFinishedSemaphores;
-		std::vector<VkFence> mInFlightFences;
 	};
 }
