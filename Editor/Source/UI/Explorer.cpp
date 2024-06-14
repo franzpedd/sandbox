@@ -131,7 +131,6 @@ namespace Cosmos
 		}
 	}
 
-
 	void Explorer::Refresh(std::string path)
 	{
 		// clear previous assets

@@ -10,7 +10,7 @@ namespace Cosmos
 	public:
 
 		// constructor
-		Viewport(Shared<Window> window, Shared<Renderer> renderer);
+		Viewport(Shared<Window> window, Shared<Renderer> renderer, Shared<UI> ui);
 
 		// destructor
 		virtual ~Viewport();
@@ -38,6 +38,7 @@ namespace Cosmos
 
 		Shared<Window> mWindow;
 		Shared<Renderer> mRenderer;
+		Shared<UI> mUI;
 
 		// ui resources
 		ImVec2 mCurrentSize;

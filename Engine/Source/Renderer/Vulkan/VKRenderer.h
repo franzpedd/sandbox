@@ -1,4 +1,5 @@
 #pragma once
+#if defined COSMOS_RENDERER_VULKAN
 
 #include "Renderer/Renderer.h"
 #include <vector>
@@ -66,3 +67,5 @@ namespace Cosmos::Vulkan
 		Shared<Vulkan::PipelineLibrary> mPipelineLibrary;
 	};
 }
+
+#endif

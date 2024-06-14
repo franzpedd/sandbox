@@ -16,7 +16,7 @@ namespace Cosmos
 		mDockspace = new Dockspace();
 		mImDemo = new ImDemo();
 		mConsole = new Console();
-		mViewport = new Viewport(mWindow, mRenderer);
+		mViewport = new Viewport(mWindow, mRenderer, mUI);
 
 		// grid uses viewport's renderpass, must be created after it
 		mGrid = new Grid(mRenderer); 

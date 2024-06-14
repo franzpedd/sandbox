@@ -23,7 +23,7 @@ namespace Cosmos
 				Fragment,
 				Vertex,
 				Mesh,
-				Image // special, an image will be itself as an asset
+				Image
 			};
 
 			typedef struct View

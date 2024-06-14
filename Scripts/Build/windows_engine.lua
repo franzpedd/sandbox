@@ -38,6 +38,11 @@ project "Engine"
         "%{libraries.Shaderc}"
     }
 
+    defines
+    {
+        "COSMOS_RENDERER_VULKAN" -- compiles vulkan code
+    }
+
     filter "configurations:Debug"
         defines { "ENGINE_DEBUG" }
         runtime "Debug"

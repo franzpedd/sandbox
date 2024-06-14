@@ -13,7 +13,7 @@ namespace Cosmos
 	{
 		mWindow = CreateShared<Window>(this, "Cosmos", 1280, 720);
 		mRenderer = Renderer::Create(this, mWindow);
-		mUI = CreateShared<UI>(this);
+		mUI = UI::Create(this);
 		mScene = CreateShared<Scene>(mRenderer);
 	}
 

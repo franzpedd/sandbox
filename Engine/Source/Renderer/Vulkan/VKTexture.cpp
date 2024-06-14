@@ -1,4 +1,6 @@
 #include "epch.h"
+#if defined COSMOS_RENDERER_VULKAN
+
 #include "VKTexture.h"
 
 #include "VKRenderer.h"
@@ -393,3 +395,5 @@ namespace Cosmos::Vulkan
 		vmaFreeMemory(mRenderer->GetDevice()->GetAllocator(), stagingBufferMemory);
 	}
 }
+
+#endif

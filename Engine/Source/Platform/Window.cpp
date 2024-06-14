@@ -14,11 +14,15 @@
 
 #if defined(PLATFORM_LINUX)
 #include <SDL2/SDL.h>
+#if defined COSMOS_RENDERER_VULKAN
 #include <SDL2/SDL_vulkan.h>
+#endif
 #include <SDL2/SDL_scancode.h>
 #elif defined(PLATFORM_WINDOWS)
 #include <SDL.h>
+#if defined COSMOS_RENDERER_VULKAN
 #include <SDL_vulkan.h>
+#endif
 #include <SDL_scancode.h>
 #endif
 
@@ -69,7 +73,7 @@ namespace Cosmos
 		while (SDL_PollEvent(&SDL_E))
 		{
             // process event on the ui
-            UI::HandleInternalEvent(&SDL_E);
+            UI::HandleWindowInputEvent(&SDL_E);
 
 			switch (SDL_E.type)
 			{ 
@@ -186,7 +190,9 @@ namespace Cosmos
 
     void Window::GetFrameBufferSize(int32_t* width, int32_t* height)
     {
+#if defined COSMOS_RENDERER_VULKAN
         SDL_Vulkan_GetDrawableSize(mNativeWindow, width, height);
+#endif
     }
 
     void Window::ResizeFramebuffer()
@@ -195,7 +201,10 @@ namespace Cosmos
 
         int32_t width = 0;
         int32_t height = 0;
+
+#if defined COSMOS_RENDERER_VULKAN
         SDL_Vulkan_GetDrawableSize(mNativeWindow, &width, &height);
+#endif
 
         // this is wacky but we can't create a swapchain with the window minimized, therefore we must stalle the window somehow
         // I have choosen to wait the application until it's not minimized anymore but this may not be viable when you wan't the application
@@ -225,15 +234,19 @@ namespace Cosmos
 
     void Window::GetInstanceExtensions(uint32_t* count, const char** names)
     {
+#if defined COSMOS_RENDERER_VULKAN
         SDL_Vulkan_GetInstanceExtensions(mNativeWindow, count, names);
+#endif
     }
 
     void Window::CreateSurface(void* instance, void** surface)
     {
+#if defined COSMOS_RENDERER_VULKAN
         if (!SDL_Vulkan_CreateSurface(mNativeWindow, (VkInstance)instance, (VkSurfaceKHR*)(surface)))
         {
             COSMOS_LOG(Logger::Assert, "Error when creating SDL Window Surface for Vulkan. Error: %s", SDL_GetError());
         }
+#endif
     }
 
     void Window::StartFrame()

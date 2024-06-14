@@ -21,70 +21,60 @@ namespace Cosmos
 	{
 	public:
 
+		// returns a smart-ptr to a new UI
+		static Shared<UI> Create(Application* application);
+
 		// constructor
-		UI(Application* application);
+		UI() = default;
 
 		// destructor
-		~UI();
+		virtual ~UI() = default;
 
 		// returns a reference to the stack of widgets
 		inline Stack<Widget*>& GetWidgetStackRef() { return mWidgets; }
 
 	public:
 
-		// updates the user interface tick
-		void OnUpdate();
-
-		// renders ui that contains renderer draws
-		void OnRender();
-
-		// event handling
-		void OnEvent(Shared<Event> event);
-
-		// sends the command buffer to be drawn
-		void Draw(void* commandBuffer);
-
-	public:
-
-		// adds a new widget into the ui
-		void AddWidget(Widget* widget);
-
-		// sets the minimum image count, used whenever the swapchain is resized and image count change
-		void SetImageCount(uint32_t count);
-
-	public:
-
-		// enables/disables cursor
-		static void ToggleCursor(bool hide);
-
 		// sends sdl events to user interface
-		static void HandleInternalEvent(SDL_Event* e);
+		static void HandleWindowInputEvent(SDL_Event* e);
 
-	public:
-
-		// adds a texture into the ui
-		static void* AddTexture(void* sampler, void* view);
+		// adds a texture to the ui
 		static void* AddTexture(Shared<Texture2D> texture);
 
-		// removes a texture from the ui
-		static void RemoveTexture(void* descriptor);
+	public:
 
-	private:
+		// adds a new widget to the ui
+		void AddWidget(Widget* widget);
 
-		// ui configuration
-		void SetupConfiguration();
+		// toggles the cursor on and off
+		void ToggleCursor(bool hide);
 
-		// create vulkan resources
-		void CreateResources();
+	public:
+
+		// updates the user interface tick
+		virtual void OnUpdate() = 0;
+
+		// event handling
+		virtual void OnEvent(Shared<Event> event) = 0;
+
+		// renders ui that contains renderer draws
+		virtual void OnRender() = 0;
+
+		// setup imgui backend configuration
+		virtual void SetupBackend() = 0;
+
+	protected:
+
+		// setup imgui frontend configuration
+		void SetupFrontend();
 
 	public: // custom widgets
 
 		// custom checkbox that slides into enabled/disabled
 		static bool CheckboxSliderEx(const char* label, bool* v);
 
-	private:
+	protected:
 
-		Application* mApplication;
 		Stack<Widget*> mWidgets;
 		ImFont* mIconFA;
 		ImFont* mIconLC;

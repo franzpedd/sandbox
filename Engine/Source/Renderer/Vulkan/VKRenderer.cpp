@@ -1,4 +1,6 @@
 #include "epch.h"
+#if defined COSMOS_RENDERER_VULKAN
+
 #include "VKRenderer.h"
 
 #include "Instance.h"
@@ -6,12 +8,13 @@
 #include "Renderpass.h"
 #include "Swapchain.h"
 #include "Pipeline.h"
+#include "VKUI.h"
+
 #include "Core/Application.h"
 #include "Core/Event.h"
 #include "Core/Scene.h"
 #include "Entity/Unique/Camera.h"
 #include "Platform/Window.h"
-#include "UI/UI.h"
 #include "Util/Logger.h"
 
 #include <array>
@@ -103,7 +106,7 @@ namespace Cosmos::Vulkan
 			mSwapchain->Recreate();
 		
 			mCamera->SetAspectRatio(mWindow->GetAspectRatio());
-			mApplication->GetUI()->SetImageCount(mSwapchain->GetImageCount());
+			std::dynamic_pointer_cast<Vulkan::VKUI>(mApplication->GetUI())->SetImageCount(mSwapchain->GetImageCount());
 		
 			int32_t width = (int32_t)mSwapchain->GetExtent().width;
 			int32_t height = (int32_t)mSwapchain->GetExtent().height;
@@ -260,7 +263,7 @@ namespace Cosmos::Vulkan
 			renderPassBeginInfo.pClearValues = &clearValue;
 			vkCmdBeginRenderPass(cmdBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-			mApplication->GetUI()->Draw(cmdBuffer);
+			std::dynamic_pointer_cast<Vulkan::VKUI>(mApplication->GetUI())->Draw(cmdBuffer);
 
 			vkCmdEndRenderPass(cmdBuffer);
 
@@ -268,3 +271,5 @@ namespace Cosmos::Vulkan
 		}
 	}
 }
+
+#endif

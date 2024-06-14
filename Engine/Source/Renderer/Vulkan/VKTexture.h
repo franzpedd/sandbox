@@ -1,4 +1,5 @@
 #pragma once
+#if defined COSMOS_RENDERER_VULKAN
 
 #include "Renderer/Texture.h"
 #include <volk.h>
@@ -80,3 +81,5 @@ namespace Cosmos::Vulkan
 		VkSampler mSampler = VK_NULL_HANDLE;
 	};
 }
+
+#endif

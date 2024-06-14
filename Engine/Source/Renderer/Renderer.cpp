@@ -8,7 +8,11 @@ namespace Cosmos
 {
 	Shared<Renderer> Renderer::Create(Application* application, Shared<Window> window)
 	{
+#if defined COSMOS_RENDERER_VULKAN
 		return CreateShared<Vulkan::VKRenderer>(application, window);
+#else
+		return Shared<Renderer>();
+#endif
 	}
 
 	Renderer::Renderer(Application* application, Shared<Window> window)

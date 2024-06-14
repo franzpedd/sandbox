@@ -1,4 +1,5 @@
 #pragma once
+#if defined COSMOS_RENDERER_VULKAN
 
 #include "Util/Memory.h"
 #include <volk.h>
@@ -56,3 +57,5 @@ namespace Cosmos::Vulkan
 		VkDebugUtilsMessengerEXT mDebugMessenger = VK_NULL_HANDLE;
 	};
 }
+
+#endif

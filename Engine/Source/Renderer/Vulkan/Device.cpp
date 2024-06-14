@@ -1,4 +1,6 @@
 #include "epch.h"
+#if defined COSMOS_RENDERER_VULKAN
+
 #include "Device.h"
 
 #include "Instance.h"
@@ -540,3 +542,5 @@ namespace Cosmos::Vulkan
 
 	}
 }
+
+#endif

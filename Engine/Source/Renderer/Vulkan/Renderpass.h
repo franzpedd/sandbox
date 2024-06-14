@@ -1,4 +1,5 @@
 #pragma once
+#if defined COSMOS_RENDERER_VULKAN
 
 #include "Util/Memory.h"
 #include <volk.h>
@@ -82,3 +83,5 @@ namespace Cosmos::Vulkan
 		std::unordered_map<std::string, Shared<Renderpass>> mRenderpasses;
 	};
 }
+
+#endif

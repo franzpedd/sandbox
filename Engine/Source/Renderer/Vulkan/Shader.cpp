@@ -1,4 +1,6 @@
 #include "epch.h"
+#if defined COSMOS_RENDERER_VULKAN
+
 #include "Shader.h"
 
 #include "Device.h"
@@ -146,3 +148,5 @@ namespace Cosmos::Vulkan
 		}
 	}
 }
+
+#endif

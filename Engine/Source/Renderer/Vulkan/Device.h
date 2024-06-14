@@ -1,4 +1,5 @@
 #pragma once
+#if defined COSMOS_RENDERER_VULKAN
 
 #include "Util/Memory.h"
 
@@ -157,3 +158,5 @@ namespace Cosmos::Vulkan
 		VmaAllocator mAllocator = VK_NULL_HANDLE;
 	};
 }
+
+#endif

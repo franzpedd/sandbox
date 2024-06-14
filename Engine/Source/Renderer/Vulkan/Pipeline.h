@@ -1,4 +1,5 @@
 #pragma once
+#if defined COSMOS_RENDERER_VULKAN
 
 #include "Renderer/Vertex.h"
 #include "Util/Memory.h"
@@ -129,3 +130,5 @@ namespace Cosmos::Vulkan
 		std::unordered_map<std::string, Shared<Pipeline>> mPipelines = {};
 	};
 }
+
+#endif

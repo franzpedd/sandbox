@@ -4,8 +4,8 @@
 
 namespace Cosmos
 {
-	Viewport::Viewport(Shared<Window> window, Shared<Renderer> renderer)
-		: Widget("Viewport"), mWindow(window), mRenderer(renderer)
+	Viewport::Viewport(Shared<Window> window, Shared<Renderer> renderer, Shared<UI> ui)
+		: Widget("Viewport"), mWindow(window), mRenderer(renderer), mUI(ui)
 	{
 		CreateRendererResources();
 	}
@@ -74,14 +74,14 @@ namespace Cosmos
 				{
 					camera->SetMove(false);
 					mWindow->ToggleCursor(false);
-					UI::ToggleCursor(false);
+					mUI->ToggleCursor(false);
 				}
 
 				else if (!camera->CanMove() && camera->GetType() == Camera::Type::FREE_LOOK)
 				{
 					camera->SetMove(true);
 					mWindow->ToggleCursor(true);
-					UI::ToggleCursor(true);
+					mUI->ToggleCursor(true);
 				}
 			}
 		}
@@ -108,7 +108,7 @@ namespace Cosmos
 				vkDestroyFramebuffer(device->GetLogicalDevice(), framebuffer, nullptr);
 			}
 
-			CreateRendererResources();
+			CreateFramebufferResources();
 		}
 	}
 
@@ -322,7 +322,7 @@ namespace Cosmos
 				vkRenderer->GetDevice()->EndSingleTimeCommand(renderpass.commandPool, command);
 
 				mImageViews[i] = vkRenderer->GetDevice()->CreateImageView(mImages[i], mSurfaceFormat, VK_IMAGE_ASPECT_COLOR_BIT);
-				mDescriptorSets[i] = (VkDescriptorSet)UI::AddTexture(mSampler, mImageViews[i]);
+				mDescriptorSets[i] = (VkDescriptorSet)Vulkan::VKUI::AddTextureBackend(mSampler, mImageViews[i]);
 
 				std::array<VkImageView, 2> attachments = { mImageViews[i], mDepthView };
 

@@ -18,7 +18,7 @@
 #include "Renderer/Texture.h"
 #include "Renderer/Vertex.h"
 
-// vulkan backend (must be defined before included)
+// vulkan backend (must be defined when building)
 #if defined COSMOS_RENDERER_VULKAN
 #include "Renderer/Vulkan/Device.h"
 #include "Renderer/Vulkan/Instance.h"
@@ -28,6 +28,7 @@
 #include "Renderer/Vulkan/Swapchain.h"
 #include "Renderer/Vulkan/VKRenderer.h"
 #include "Renderer/Vulkan/VKTexture.h"
+#include "Renderer/Vulkan/VKUI.h"
 #endif
 
 // user interface

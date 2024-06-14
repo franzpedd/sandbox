@@ -1,4 +1,6 @@
 #include "epch.h"
+#if defined COSMOS_RENDERER_VULKAN
+
 #include "Pipeline.h"
 
 #include "Device.h"
@@ -314,3 +316,5 @@ namespace Cosmos::Vulkan
         mPipelines["Skybox"]->Build(mCache);
     }
 }
+
+#endif

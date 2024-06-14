@@ -125,7 +125,6 @@ class Dependencies:
 
             Util.Download(url, path);
             Util.Decompress(path, "Thirdparty/sdl");
-    
 
     ## assimp model importer, used to import gltf models and maybe other formats in the future
     #@classmethod

@@ -1,4 +1,6 @@
 #include "epch.h"
+#if defined COSMOS_RENDERER_VULKAN
+
 #include "Instance.h"
 
 #include "Platform/Window.h"
@@ -142,3 +144,5 @@ namespace Cosmos::Vulkan
 		return VK_FALSE;
 	}
 }
+
+#endif

@@ -1,4 +1,6 @@
 #include "epch.h"
+#if defined COSMOS_RENDERER_VULKAN
+
 #include "Swapchain.h"
 
 #include "Device.h"
@@ -421,3 +423,5 @@ namespace Cosmos::Vulkan
 		return actualExtent;
 	}
 }
+
+#endif
