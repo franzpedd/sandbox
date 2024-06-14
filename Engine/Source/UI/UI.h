@@ -13,6 +13,7 @@ namespace Cosmos
 {
 	// forward declaration
 	class Application;
+	class Texture2D;
 	class Event;
 	class Widget;
 
@@ -63,6 +64,7 @@ namespace Cosmos
 
 		// adds a texture into the ui
 		static void* AddTexture(void* sampler, void* view);
+		static void* AddTexture(Shared<Texture2D> texture);
 
 		// removes a texture from the ui
 		static void RemoveTexture(void* descriptor);

@@ -15,17 +15,19 @@
 // renderer
 #include "Renderer/Buffer.h"
 #include "Renderer/Renderer.h"
+#include "Renderer/Texture.h"
 #include "Renderer/Vertex.h"
 
 // vulkan backend (must be defined before included)
 #if defined COSMOS_RENDERER_VULKAN
-#include "Renderer/Vulkan/VKRenderer.h"
 #include "Renderer/Vulkan/Device.h"
 #include "Renderer/Vulkan/Instance.h"
 #include "Renderer/Vulkan/Pipeline.h"
 #include "Renderer/Vulkan/Renderpass.h"
 #include "Renderer/Vulkan/Shader.h"
 #include "Renderer/Vulkan/Swapchain.h"
+#include "Renderer/Vulkan/VKRenderer.h"
+#include "Renderer/Vulkan/VKTexture.h"
 #endif
 
 // user interface

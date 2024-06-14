@@ -36,3 +36,7 @@ project "ImGui"
         warnings "Default"
         runtime "Release"
         optimize "On"
+
+    if os.host() == "windows" then
+        disablewarnings{ "33011", "33010", "6011", "28182" }
+    end

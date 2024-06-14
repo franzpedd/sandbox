@@ -191,6 +191,7 @@ Util.Clone("https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator", 
 Util.Clone("https://github.com/g-truc/glm", "glm", "0.9.8");
 Util.Clone("https://github.com/ocornut/imgui", "imgui", "docking");
 Util.Clone("https://github.com/CedricGuillemet/ImGuizmo", "imguizmo", "master");
+Util.Clone("https://github.com/nothings/stb", "stb", "master");
 Premake.Download("5.0.0-beta2");
 Premake.GenerateSolution();
 

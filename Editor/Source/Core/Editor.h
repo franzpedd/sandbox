@@ -7,6 +7,7 @@ namespace Cosmos
 	// forward declarations
 	class Console;
 	class Dockspace;
+	class Explorer;
 	class Grid;
 	class ImDemo;
 	class Menubar;
@@ -26,6 +27,7 @@ namespace Cosmos
 
 		Console* mConsole;
 		Dockspace* mDockspace;
+		Explorer* mExplorer;
 		Grid* mGrid;
 		ImDemo* mImDemo;
 		Menubar* mMenubar;

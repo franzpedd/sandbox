@@ -26,3 +26,5 @@ project "GLM"
     filter "configurations:Release"
         runtime "Release"
         optimize "Full"
+
+    
