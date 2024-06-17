@@ -23,7 +23,8 @@ project "Editor"
         "%{includes.VMA}",
         "%{includes.GLM}",
         "%{includes.ImGui}",
-        "%{includes.ImGuizmo}"
+        "%{includes.ImGuizmo}",
+        "%{includes.Entt}",
     }
 
     links

@@ -7,6 +7,7 @@
 #include "UI/Explorer.h"
 #include "UI/ImDemo.h"
 #include "UI/Menubar.h"
+#include "UI/SceneHierarchy.h"
 #include "UI/Viewport.h"
 
 namespace Cosmos
@@ -16,10 +17,11 @@ namespace Cosmos
 		mDockspace = new Dockspace();
 		mImDemo = new ImDemo();
 		mConsole = new Console();
+		mSceneHierarchy = new SceneHierarchy(mRenderer, mScene);
 		mViewport = new Viewport(mWindow, mRenderer, mUI);
 
 		// grid uses viewport's renderpass, must be created after it
-		mGrid = new Grid(mRenderer); 
+		mGrid = new Grid(mRenderer);
 
 		// explorer uses viewport's msaa for rendering images (it's count is 1 for better performance while on editor)
 		mExplorer = new Explorer(mRenderer);
@@ -34,6 +36,7 @@ namespace Cosmos
 		mUI->AddWidget(mExplorer);
 		mUI->AddWidget(mGrid);
 		mUI->AddWidget(mConsole);
+		mUI->AddWidget(mSceneHierarchy);
 	}
 
 	Editor::~Editor()
@@ -42,6 +45,7 @@ namespace Cosmos
 		delete mExplorer;
 		delete mGrid;
 		delete mViewport;
+		delete mSceneHierarchy;
 		delete mConsole;
 		delete mImDemo;
 		delete mDockspace;

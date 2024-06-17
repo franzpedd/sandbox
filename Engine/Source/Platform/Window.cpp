@@ -197,18 +197,11 @@ namespace Cosmos
 
     void Window::ResizeFramebuffer()
     {
-        SDL_Event e;
-
-        int32_t width = 0;
-        int32_t height = 0;
-
-#if defined COSMOS_RENDERER_VULKAN
-        SDL_Vulkan_GetDrawableSize(mNativeWindow, &width, &height);
-#endif
-
         // this is wacky but we can't create a swapchain with the window minimized, therefore we must stalle the window somehow
         // I have choosen to wait the application until it's not minimized anymore but this may not be viable when you wan't the application
         // to continue going even after minized.
+
+        SDL_Event e;
         COSMOS_LOG(Logger::Todo, "Address the commented issue above");
 
         while(SDL_GetWindowFlags(mNativeWindow) & SDL_WINDOW_MINIMIZED)

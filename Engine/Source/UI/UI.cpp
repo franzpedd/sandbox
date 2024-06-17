@@ -177,4 +177,68 @@ namespace Cosmos
 
 		return pressed;
 	}
+
+	bool UI::Vector3Control(const char* label, glm::vec3& values)
+	{
+		ImGui::PushID(label);
+
+		constexpr ImVec4 colorX = ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f };
+		constexpr ImVec4 colorY = ImVec4{ 0.25f, 0.7f, 0.2f, 1.0f };
+		constexpr ImVec4 colorZ = ImVec4{ 0.1f, 0.25f, 0.8f, 1.0f };
+
+		// x
+		{
+
+			ImGui::PushStyleColor(ImGuiCol_Button, colorX);
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, colorX);
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, colorX);
+
+			ImGui::SmallButton("X");
+			ImGui::SameLine();
+			ImGui::PushItemWidth(50);
+			ImGui::DragFloat("##X", &values.x, 0.1f, 0.0f, 0.0f, "%.2f");
+			ImGui::SameLine();
+			ImGui::PopItemWidth();
+
+			ImGui::PopStyleColor(3);
+		}
+
+		// y
+		{
+			ImGui::PushStyleColor(ImGuiCol_Button, colorY);
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, colorY);
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, colorY);
+
+			ImGui::SmallButton("Y");
+			ImGui::SameLine();
+			ImGui::PushItemWidth(50);
+			ImGui::DragFloat("##Y", &values.y, 0.1f, 0.0f, 0.0f, "%.2f");
+			ImGui::SameLine();
+			ImGui::PopItemWidth();
+
+			ImGui::PopStyleColor(3);
+		}
+
+		// z
+		{
+			ImGui::PushStyleColor(ImGuiCol_Button, colorZ);
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, colorZ);
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, colorZ);
+
+			ImGui::SmallButton("Z");
+			ImGui::SameLine();
+			ImGui::PushItemWidth(50);
+			ImGui::DragFloat("##Z", &values.z, 0.1f, 0.0f, 0.0f, "%.2f");
+			ImGui::SameLine();
+			ImGui::PopItemWidth();
+
+			ImGui::PopStyleColor(3);
+		}
+
+		ImGui::NewLine();
+
+		ImGui::PopID();
+
+		return true;
+	}
 }

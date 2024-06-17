@@ -375,8 +375,6 @@ namespace Cosmos::Vulkan
 
 	VkSurfaceFormatKHR Swapchain::ChooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
 	{
-		COSMOS_LOG(Logger::Todo, "Decide on better format (VK_FORMAT_R8G8B8A8_SRGB) ?");
-
 		for (const auto& availableFormat : availableFormats)
 		{
 			if (availableFormat.format == VK_FORMAT_B8G8R8A8_UNORM && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)

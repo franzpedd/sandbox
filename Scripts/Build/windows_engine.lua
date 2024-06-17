@@ -27,6 +27,7 @@ project "Engine"
         "%{includes.ImGui}",
         "%{includes.ImGuizmo}",
         "%{includes.STB}",
+        "%{includes.Entt}",
 
         "%{wks.location}/Thirdparty/sdl/SDL2-2.30.2/include",   -- SDL location changes depending on operating system
         "%{wks.location}/Thirdparty/imgui/backends"             -- ImGui rely on backend implementation, we're using SDL2+Vulkan

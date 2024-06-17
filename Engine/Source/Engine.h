@@ -5,6 +5,8 @@
 #include "Core/Scene.h"
 
 // entity system
+#include "Entity/Entity.h"
+#include "Entity/Components/Base.h"
 #include "Entity/Unique/Camera.h"
 
 // platform code
@@ -46,5 +48,6 @@
 #include "Util/Memory.h"
 #include "Util/Queue.h"
 #include "Util/Stack.h"
+#include "Util/UUID.h"
 
 // wrappers are not to be included into the apps

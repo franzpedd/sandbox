@@ -73,6 +73,9 @@ namespace Cosmos
 		// custom checkbox that slides into enabled/disabled
 		static bool CheckboxSliderEx(const char* label, bool* v);
 
+		// custom vector-3 controls
+		static bool Vector3Control(const char* label, glm::vec3& values);
+
 	protected:
 
 		Stack<Widget*> mWidgets;

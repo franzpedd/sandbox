@@ -2,6 +2,7 @@
 _build/
 .vs/
 .vscode/
+Thirdparty/entt
 Thirdparty/glm
 Thirdparty/imgui
 Thirdparty/imguizmo

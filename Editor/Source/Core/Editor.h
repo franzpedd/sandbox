@@ -11,6 +11,7 @@ namespace Cosmos
 	class Grid;
 	class ImDemo;
 	class Menubar;
+	class SceneHierarchy;
 	class Viewport;
 
 	class Editor : public Application
@@ -31,6 +32,7 @@ namespace Cosmos
 		Grid* mGrid;
 		ImDemo* mImDemo;
 		Menubar* mMenubar;
+		SceneHierarchy* mSceneHierarchy;
 		Viewport* mViewport;
 	};
 }
