@@ -7,6 +7,7 @@
 // entity system
 #include "Entity/Entity.h"
 #include "Entity/Components/Base.h"
+#include "Entity/Components/Renderable.h"
 #include "Entity/Unique/Camera.h"
 
 // platform code

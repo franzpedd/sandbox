@@ -9,20 +9,32 @@ namespace Cosmos
         enum Component
         {
             POSITION = 0,
-            COLOR,
             NORMAL,
-            UV
+            UV0,
+            UV1,
+            JOINT,
+            WEIGHT,
+            COLOR
         };
 
         glm::vec3 position;
-        glm::vec3 color;
         glm::vec3 normal;
-        glm::vec2 uv;
+        glm::vec2 uv0;
+        glm::vec2 uv1;
+        glm::uvec4 joint;
+        glm::vec4 weight;
+        glm::vec4 color;
 
         // checks if current vertex is the same as another
         inline bool operator==(const Vertex& other) const
         {
-            return position == other.position && color == other.color && normal == other.normal && uv == other.uv;
+            return position == other.position
+                && normal == other.normal
+                && uv0 == other.uv0
+                && uv1 == other.uv1
+                && joint == other.joint
+                && weight == other.weight
+                && color == other.color;
         }
     };
 }

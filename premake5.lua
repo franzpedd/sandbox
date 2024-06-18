@@ -22,6 +22,7 @@ includes["ImGui"] = "%{wks.location}/Thirdparty/imgui"
 includes["ImGuizmo"] = "%{wks.location}/Thirdparty/imguizmo"
 includes["STB"] = "%{wks.location}/Thirdparty/stb"
 includes["Entt"] = "%{wks.location}/Thirdparty/entt/single_include"
+includes["TinyGLTF"] = "%{wks.location}/Thirdparty/tinygltf"
 
 libraries = {}
 libraries["Shaderc"] = os.getenv("VULKAN_SDK") .. "/Lib/shaderc_shared.lib"

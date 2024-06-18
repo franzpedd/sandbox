@@ -192,6 +192,7 @@ Util.Clone("https://github.com/ocornut/imgui", "imgui", "docking");
 Util.Clone("https://github.com/CedricGuillemet/ImGuizmo", "imguizmo", "master");
 Util.Clone("https://github.com/nothings/stb", "stb", "master");
 Util.Clone("https://github.com/skypjack/entt", "entt", "master");
+Util.Clone("https://github.com/syoyo/tinygltf", "tinygltf", "master");
 Premake.Download("5.0.0-beta2");
 Premake.GenerateSolution();
 

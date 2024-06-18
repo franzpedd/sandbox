@@ -8,6 +8,40 @@ namespace Cosmos
 	// forward declarations
 	class Renderer;
 
+	class TextureSampler
+	{
+	public:
+		typedef enum class Filter
+		{
+			FILTER_NEAREST = 0,
+			FILTER_LINEAR = 1
+		} Filter;
+
+		typedef enum class AddressMode
+		{
+			ADDRESS_MODE_REPEAT = 0,
+			ADDRESS_MODE_MIRRORED_REPEAT = 1,
+			ADDRESS_MODE_CLAMP_TO_EDGE = 2,
+			ADDRESS_MODE_CLAMP_TO_BORDER = 3
+		} AddressMode;
+
+	public:
+
+		// translates the wrap mode for the renderer api
+		static AddressMode WrapMode(int32_t wrap);
+
+		// translates the filter mode for the renderer api
+		static Filter FilterMode(int32_t filter);
+
+	public:
+
+		Filter mag = Filter::FILTER_NEAREST;
+		Filter min = Filter::FILTER_NEAREST;
+		AddressMode u = AddressMode::ADDRESS_MODE_REPEAT;
+		AddressMode v = AddressMode::ADDRESS_MODE_REPEAT;
+		AddressMode w = AddressMode::ADDRESS_MODE_REPEAT;
+	};
+
 	class Texture2D
 	{
 	public:

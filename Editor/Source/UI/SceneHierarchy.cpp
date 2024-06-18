@@ -1,5 +1,7 @@
 #include "SceneHierarchy.h"
 
+#include <filesystem>
+
 namespace Cosmos
 {
 	SceneHierarchy::SceneHierarchy(Shared<Renderer> renderer, Shared<Scene> scene)
@@ -108,6 +110,7 @@ namespace Cosmos
 			if (ImGui::BeginMenu(ICON_FA_PLUS_SQUARE))
 			{
 				DisplayAddComponentEntry<TransformComponent>("Transform");
+				DisplayAddComponentEntry<MeshComponent>("Mesh");
 
 				ImGui::EndMenu();
 			}
@@ -160,6 +163,32 @@ namespace Cosmos
 				ImGui::Text("S: ");
 				ImGui::SameLine();
 				UI::Vector3Control("Scale", component.scale);
+			});
+
+		DrawComponent<MeshComponent>("Mesh", mSelectedEntity, [&](MeshComponent& component)
+			{
+				if (component.mesh == nullptr) {
+					component.mesh = Mesh::Create(mRenderer);
+				}
+
+				// path
+				constexpr unsigned int EntityNameMaxChars = 32;
+				auto modelPath = component.mesh->GetFilepath();
+				char buffer[EntityNameMaxChars];
+				memset(buffer, 0, sizeof(buffer));
+				std::strncpy(buffer, modelPath.c_str(), sizeof(buffer));
+				ImGui::InputTextWithHint("", "drop from explorer", buffer, sizeof(buffer), ImGuiInputTextFlags_ReadOnly);
+
+				if (ImGui::BeginDragDropTarget())
+				{
+					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("EXPLORER"))
+					{
+						std::filesystem::path path = (const char*)payload->Data;
+						component.mesh->LoadFromFile(path.string());
+					}
+
+					ImGui::EndDragDropTarget();
+				}
 			});
 	}
 

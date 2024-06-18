@@ -25,6 +25,7 @@ project "Editor"
         "%{includes.ImGui}",
         "%{includes.ImGuizmo}",
         "%{includes.Entt}",
+        "%{includes.TinyGLTF}"
     }
 
     links

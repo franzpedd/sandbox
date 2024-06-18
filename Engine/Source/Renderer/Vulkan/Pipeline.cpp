@@ -168,9 +168,12 @@ namespace Cosmos::Vulkan
         switch (component)
         {
             case Vertex::Component::POSITION: return VkVertexInputAttributeDescription({ location, binding, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, position) });
-            case Vertex::Component::COLOR: return VkVertexInputAttributeDescription({ location, binding, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(Vertex, color) });
             case Vertex::Component::NORMAL: return VkVertexInputAttributeDescription({ location, binding, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, normal) });
-            case Vertex::Component::UV: return VkVertexInputAttributeDescription({ location, binding, VK_FORMAT_R32G32_SFLOAT, offsetof(Vertex, uv) });
+            case Vertex::Component::UV0: return VkVertexInputAttributeDescription({ location, binding, VK_FORMAT_R32G32_SFLOAT, offsetof(Vertex, uv0) });
+            case Vertex::Component::UV1: return VkVertexInputAttributeDescription({ location, binding, VK_FORMAT_R32G32_SFLOAT, offsetof(Vertex, uv1) });
+            case Vertex::Component::JOINT: return VkVertexInputAttributeDescription({ location, binding, VK_FORMAT_R32G32B32A32_UINT, offsetof(Vertex, joint) });
+            case Vertex::Component::WEIGHT: return VkVertexInputAttributeDescription({ location, binding, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(Vertex, weight) });
+            case Vertex::Component::COLOR: return VkVertexInputAttributeDescription({ location, binding, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(Vertex, color) });
         }
         
         return VkVertexInputAttributeDescription({});
@@ -238,45 +241,51 @@ namespace Cosmos::Vulkan
         meshSpecification.renderPass = mRenderpassManager->GetMainRenderpass();
         meshSpecification.vertexShader = CreateShared<Shader>(mDevice, Shader::Type::Vertex, "Mesh.vert", GetAssetSubDir("Shader/mesh.vert"));
         meshSpecification.fragmentShader = CreateShared<Shader>(mDevice, Shader::Type::Fragment, "Mesh.frag", GetAssetSubDir("Shader/mesh.frag"));
-        meshSpecification.vertexComponents = { Vertex::Component::POSITION, Vertex::Component::COLOR, Vertex::Component::NORMAL, Vertex::Component::UV };
-
+        meshSpecification.vertexComponents = 
+        { 
+            Vertex::Component::POSITION, 
+            Vertex::Component::COLOR, 
+            Vertex::Component::NORMAL, 
+            Vertex::Component::UV0
+        };
+        
         meshSpecification.bindings.resize(2);
-
+        
         // model view projection
         meshSpecification.bindings[0].binding = 0;
         meshSpecification.bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         meshSpecification.bindings[0].descriptorCount = 1;
         meshSpecification.bindings[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
         meshSpecification.bindings[0].pImmutableSamplers = nullptr;
-
+        
         // albedo
         meshSpecification.bindings[1].binding = 1;
         meshSpecification.bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         meshSpecification.bindings[1].descriptorCount = 1;
         meshSpecification.bindings[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
         meshSpecification.bindings[1].pImmutableSamplers = nullptr;
-
+        
         // common
         {
             // create normal pipeline
             mPipelines["Mesh.Common"] = CreateShared<Pipeline>(mDevice, meshSpecification);
-
+        
             // modify parameters after initial creation
             mPipelines["Mesh.Common"]->GetSpecificationRef().RSCI.cullMode = VK_CULL_MODE_BACK_BIT;
-
+        
             // build the pipeline
             mPipelines["Mesh.Common"]->Build(mCache);
         }
-
+        
         // wireframed
         {
             // create
             mPipelines["Mesh.Wireframed"] = CreateShared<Pipeline>(mDevice, meshSpecification);
-
+        
             // modify parameters after initial creation
             mPipelines["Mesh.Wireframed"]->GetSpecificationRef().RSCI.cullMode = VK_CULL_MODE_BACK_BIT;
             mPipelines["Mesh.Wireframed"]->GetSpecificationRef().RSCI.polygonMode = VK_POLYGON_MODE_LINE;
-
+        
             // build the pipeline
             mPipelines["Mesh.Wireframed"]->Build(mCache);
         }
