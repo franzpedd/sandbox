@@ -1,8 +1,5 @@
 #pragma once
 
-#include "Material.h"
-#include "Physics/BoundingBox.h"
-#include "Util/Math.h"
 #include "Util/Memory.h"
 #include <string>
 
@@ -24,7 +21,15 @@ namespace Cosmos
 		// returns the mesh file name
 		virtual std::string GetFilepath() const = 0;
 
+	public:
+
+		// updates the mesh logic
+		virtual void OnUpdate(float timestep) = 0;
+
+		// draws the mesh
+		virtual void OnRender() = 0;
+
 		// loads the model from a filepath
-		virtual void LoadFromFile(std::string filepath) = 0;
+		virtual void LoadFromFile(std::string filepath, float scale = 1.0f) = 0;
 	};
 }

@@ -4,6 +4,8 @@
 // Changing this value here also requires changing it in the vertex shader
 #define MAX_NUM_JOINTS 128u
 
+#include "Physics/BoundingBox.h"
+#include "Renderer/Material.h"
 #include "Renderer/Mesh.h"
 #include "Renderer/Vertex.h"
 #include "Renderer/Texture.h"
@@ -58,7 +60,7 @@ namespace Cosmos::Vulkan
 			std::vector<Node*> joints;
 		};
 
-		struct MeshInternal
+		struct Internal
 		{
 			struct UniformBuffer
 			{
@@ -84,10 +86,10 @@ namespace Cosmos::Vulkan
 			UniformBlock uniformBlock;
 
 			// constructor
-			MeshInternal(Shared<Device> device, glm::mat4 matrix);
+			Internal(Shared<Device> device, glm::mat4 matrix);
 
 			// destructor
-			~MeshInternal();
+			~Internal();
 
 			// sets a bounding box for the mesh
 			void SetBoundingBox(glm::vec3 min, glm::vec4 max);
@@ -95,13 +97,13 @@ namespace Cosmos::Vulkan
 
 		struct Node
 		{
-			Node* parent;
-			uint32_t index;
+			Node* parent = nullptr;
+			uint32_t index = 0;
 			std::vector<Node*> children;
 			glm::mat4 matrix;
 			std::string name;
-			MeshInternal* mesh;
-			Skin* skin;
+			Internal* mesh = nullptr;
+			Skin* skin = nullptr;
 			int32_t skinIndex = -1;
 			glm::vec3 translation = glm::vec3();
 			glm::quat rotation = glm::quat();
@@ -161,17 +163,21 @@ namespace Cosmos::Vulkan
 				// calculates the inteprolation of the cubic spline type
 				glm::vec4 CubicSplineInterpolation(size_t index, float time, uint32_t stride);
 
-				// translates
+				// calculates the translation of this sampler for the given node at a given time point depending on the interpolation type
 				void Translate(Node* node, size_t index, float time);
 
-				// rotates
+				// calculates the scale of this sampler for the given node at a given time point depending on the interpolation type
 				void Scale(Node* node, size_t index, float time);
 
-				// rotates
+				// calculates the rotation of this sampler for the given node at a given time point depending on the interpolation type
 				void Rotate(Node* node, size_t index, float time);
-
-
 			};
+
+			std::string name;
+			std::vector<Sampler> samplers;
+			std::vector<Channel> channels;
+			float start = std::numeric_limits<float>::max();
+			float end = std::numeric_limits<float>::min();
 		};
 
 	public:
@@ -187,30 +193,74 @@ namespace Cosmos::Vulkan
 
 	public:
 
+		// updates the mesh logic
+		virtual void OnUpdate(float timestep) override;
+
+		// draws the mesh
+		virtual void OnRender() override;
+
 		// loads the model from a filepath
-		virtual void LoadFromFile(std::string filepath) override;
+		virtual void LoadFromFile(std::string filepath, float scale = 1.0f) override;
 
 	private:
+
+		// calculates the mesh dimensions
+		void CalculateSceneDimensions();
+
+		// calculates the bounding box of a node
+		void CalculateBoundingBox(Node* node, Node* parent);
 
 		// interprets the mesh node, reading it's vertex and index count
 		void GetVertexAndIndicesCount(const tinygltf::Node& node, const tinygltf::Model& model, size_t& vertexCount, size_t& indexCount);
 
+		// loads a mesh node
+		void LoadNode(Node* parent, const tinygltf::Node& node, uint32_t nodeIndex, const tinygltf::Model& model, LoaderInfo& loaderInfo, float globalscale);
+
+		// finds a node by it's parent
+		Node* FindNode(Node* parent, uint32_t index);
+
+		// returns a node given it's index
+		Node* NodeFromIndex(uint32_t index);
+
+		// renders a node
+		void DrawNode(Node* node, VkCommandBuffer commandBuffer);
 
 	private:
 
-		// testing 
-		void LoadSamplers(tinygltf::Model& model);
-		void LoadTextures(tinygltf::Model& model);
+		// loads meshe's material properties, as well as creating a default one if it doesn't have any
 		void LoadMaterials(tinygltf::Model& model);
+
+		// loads any animation the mesh may have
+		void LoadAnimations(tinygltf::Model& model);
+
+		// loads any skin the mesh may have
+		void LoadSkins(tinygltf::Model& model);
+
+		// creates the vulkan buffers and resources for the mesh
+		void CreateRendererResources(LoaderInfo& loaderInfo, size_t vertexBufferSize, size_t indexBufferSize);
 
 	public:
 
 		Shared<VKRenderer> mRenderer;
 		std::string mFilepath = {};
 
-		std::vector<TextureSampler> mSamplers;
-		std::vector<Shared<Texture2D>> mTextures;
+		// scene dimensions
+		glm::vec3 mDimensionMin = glm::vec3(FLT_MAX);
+		glm::vec3 mDimensionMax = glm::vec3(-FLT_MAX);
+		glm::mat4 mAABB;
+
+		// gltf data
+		std::vector<Node*> mNodes;
+		std::vector<Node*> mLinearNodes;
 		std::vector<Material> mMaterials;
+		std::vector<Animation> mAnimations;
+		std::vector<Skin*> mSkins;
+
+		// vulkan resources
+		VkBuffer mVertexBuffer = VK_NULL_HANDLE;
+		VmaAllocation mVertexMemory = VK_NULL_HANDLE;
+		VkBuffer mIndexBuffer = VK_NULL_HANDLE;
+		VmaAllocation mIndexMemory = VK_NULL_HANDLE;
 	};
 }
 

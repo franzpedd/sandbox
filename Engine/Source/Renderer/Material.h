@@ -16,8 +16,11 @@ namespace Cosmos
 			BLEND
 		};
 
-		struct BaseSpecification
+		struct Specification
 		{
+			// util
+			int index = 0;
+
 			// transparency
 			AlphaChannel alphaChannel = OPAQUE;
 			float alhpaCutoff = 1.0f;
@@ -26,6 +29,8 @@ namespace Cosmos
 			bool doubleSided = false;
 			glm::vec4 baseColorFactor = glm::vec4(1.0f);
 			glm::vec4 emissiveFactor = glm::vec4(0.0f);
+
+			// textures
 			Shared<Texture2D> baseColorTexture;
 			Shared<Texture2D> normalTexture;
 			Shared<Texture2D> occlusionTexture;
@@ -50,7 +55,7 @@ namespace Cosmos
 	public:
 
 		// returns a reference to the material's base specification
-		inline BaseSpecification& GetBaseSpecificationRef() { return mBaseSpecification; }
+		inline Specification& GetSpecificationRef() { return mBaseSpecification; }
 
 		// returns a reference to the metallic roughness specification/workflow
 		inline MetallicRoughnessWorkflow& GetMetallicRoughnessWorkflow() { return mMetallicRoughnessWorkflow; }
@@ -60,7 +65,7 @@ namespace Cosmos
 
 	private:
 
-		BaseSpecification mBaseSpecification;
+		Specification mBaseSpecification;
 		MetallicRoughnessWorkflow mMetallicRoughnessWorkflow;
 		void* mDescriptorSet = nullptr;
 	};
