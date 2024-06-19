@@ -12,6 +12,7 @@ Thirdparty/stb
 Thirdparty/tinygltf
 Thirdparty/vma
 Thirdparty/volk
+Thirdparty/vulkan-sdk
 
 # extensions
 *.sln

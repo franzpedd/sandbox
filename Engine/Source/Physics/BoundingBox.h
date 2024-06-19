@@ -8,6 +8,9 @@ namespace Cosmos
 	{
 	public:
 
+		// constructor
+		BoundingBox() = default;
+
 		// constructor 
 		BoundingBox(glm::vec3 min, glm::vec3 max);
 

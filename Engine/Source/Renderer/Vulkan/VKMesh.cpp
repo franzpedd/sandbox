@@ -1,7 +1,6 @@
 #include "epch.h"
 #if defined COSMOS_RENDERER_VULKAN
 
-#include "Renderer/Material.h"
 #include "Device.h"
 #include "VKMesh.h"
 #include "VKTexture.h"
@@ -10,6 +9,42 @@
 
 namespace Cosmos::Vulkan
 {
+	VKMesh::MeshInternal::MeshInternal(Shared<Device> device, glm::mat4 matrix)
+		: device(device)
+	{
+		uniformBlock.matrix = matrix;
+
+		device->CreateBuffer
+		(
+			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			sizeof(uniformBlock),
+			&uniformBuffer.buffer,
+			&uniformBuffer.allocation,
+			&uniformBlock
+		);
+
+		vmaMapMemory(device->GetAllocator(), uniformBuffer.allocation, &uniformBuffer.mapped);
+	}
+
+	VKMesh::MeshInternal::~MeshInternal()
+	{
+		vmaDestroyBuffer(device->GetAllocator(), uniformBuffer.buffer, uniformBuffer.allocation);
+		vmaFreeMemory(device->GetAllocator(), uniformBuffer.allocation);
+
+		for (Primitive* prim : primitives)
+		{
+			delete prim;
+		}
+	}
+
+	void VKMesh::MeshInternal::SetBoundingBox(glm::vec3 min, glm::vec4 max)
+	{
+		boundingBox.GetMinRef() = min;
+		boundingBox.GetMaxRef() = max;
+		boundingBox.SetValid(true);
+	}
+
 	VKMesh::VKMesh(Shared<VKRenderer> renderer)
 		: mRenderer(renderer)
 	{
@@ -259,6 +294,82 @@ namespace Cosmos::Vulkan
 		// push a default material at the end of the list for meshes with no material assigned
 		mMaterials.push_back(Material());
 	}
+	
+	VKMesh::Node::~Node()
+	{
+		if (mesh) {
+			delete mesh;
+		}
+
+		for (auto& child : children) {
+			delete child;
+		}
+	}
+
+	glm::mat4 VKMesh::Node::GetLocalMatrix()
+	{
+		if (!useCachedMatrix) {
+			cachedLocalMatrix = glm::translate(glm::mat4(1.0f), translation) * glm::mat4(rotation) * glm::scale(glm::mat4(1.0f), scale) * matrix;
+		}
+
+		return cachedLocalMatrix;
+	}
+
+	glm::mat4 VKMesh::Node::GetMatrix()
+	{
+		if (!useCachedMatrix) {
+			glm::mat4 finalMatrix = GetLocalMatrix();
+			Node* aux = parent;
+
+			while (aux != nullptr) {
+				finalMatrix = aux->GetLocalMatrix() * finalMatrix;
+				aux = aux->parent;
+			}
+
+			cachedMatrix = finalMatrix;
+			useCachedMatrix = true;
+
+			return finalMatrix;
+		}
+
+		return cachedMatrix;
+	}
+
+	void VKMesh::Node::OnUpdate()
+	{
+		useCachedMatrix = false;
+
+		if (mesh) {
+			glm::mat4 mat = GetLocalMatrix();
+
+			if (skin) {
+				mesh->uniformBlock.matrix = mat;
+
+				// update joint matrices
+				glm::mat4 inverseTransform = glm::inverse(mat);
+				size_t numJoints = std::min((uint32_t)skin->joints.size(), MAX_NUM_JOINTS);
+
+				for (size_t i = 0; i < numJoints; i++) {
+					Node* jointNode = skin->joints[i];
+					glm::mat4 jointMat = jointNode->GetMatrix() * skin->inverseBindMatrices[i];
+					jointMat = inverseTransform * jointMat;
+					mesh->uniformBlock.jointMatrix[i] = jointMat;
+				}
+
+				mesh->uniformBlock.jointCount = (uint32_t)numJoints;
+				memcpy(mesh->uniformBuffer.mapped, &mesh->uniformBlock, sizeof(mesh->uniformBlock));
+			}
+
+			else {
+				memcpy(mesh->uniformBuffer.mapped, &mat, sizeof(glm::mat4));
+			}
+		}
+
+		for (auto& child : children) {
+			child->OnUpdate();
+		}
+	}
+
 }
 
 #endif
