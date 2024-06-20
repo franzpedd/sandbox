@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Util/Math.h"
 #include "Util/Memory.h"
 #include <string>
 
@@ -21,10 +22,13 @@ namespace Cosmos
 		// returns the mesh file name
 		virtual std::string GetFilepath() const = 0;
 
+		// returns if the mesh is fully loaded
+		virtual bool IsLoaded() const = 0;
+
 	public:
 
 		// updates the mesh logic
-		virtual void OnUpdate(float timestep) = 0;
+		virtual void OnUpdate(float timestep, glm::mat4& transform) = 0;
 
 		// draws the mesh
 		virtual void OnRender() = 0;

@@ -1,7 +1,7 @@
 #pragma once
 #if defined COSMOS_RENDERER_VULKAN
 
-// Changing this value here also requires changing it in the vertex shader
+// changing this value here also requires changing it in the vertex shader
 #define MAX_NUM_JOINTS 128u
 
 #include "Physics/BoundingBox.h"
@@ -191,10 +191,13 @@ namespace Cosmos::Vulkan
 		// returns the mesh file name
 		virtual inline std::string GetFilepath() const override { return mFilepath; }
 
+		// returns if the mesh is fully loaded
+		virtual bool IsLoaded() const override { return mLoaded; }
+
 	public:
 
 		// updates the mesh logic
-		virtual void OnUpdate(float timestep) override;
+		virtual void OnUpdate(float timestep, glm::mat4& transform) override;
 
 		// draws the mesh
 		virtual void OnRender() override;
@@ -239,10 +242,14 @@ namespace Cosmos::Vulkan
 		// creates the vulkan buffers and resources for the mesh
 		void CreateRendererResources(LoaderInfo& loaderInfo, size_t vertexBufferSize, size_t indexBufferSize);
 
+		// update the descriptor set, used whenever a texture resource gets modified/created
+		void UpdateDescriptorSets();
+
 	public:
 
 		Shared<VKRenderer> mRenderer;
 		std::string mFilepath = {};
+		bool mLoaded = false;
 
 		// scene dimensions
 		glm::vec3 mDimensionMin = glm::vec3(FLT_MAX);
@@ -261,6 +268,14 @@ namespace Cosmos::Vulkan
 		VmaAllocation mVertexMemory = VK_NULL_HANDLE;
 		VkBuffer mIndexBuffer = VK_NULL_HANDLE;
 		VmaAllocation mIndexMemory = VK_NULL_HANDLE;
+
+		VkDescriptorPool mDescriptorPool = VK_NULL_HANDLE;
+		std::vector<VkDescriptorSet> mDescriptorSets = {};
+
+		// camera's model, view and projection ubo
+		std::vector<VkBuffer> mUniformBuffers;
+		std::vector<VmaAllocation> mUniformBuffersMemory;
+		std::vector<void*> mUniformBuffersMapped;
 	};
 }
 

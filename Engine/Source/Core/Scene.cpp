@@ -3,6 +3,7 @@
 
 #include "Entity/Entity.h"
 #include "Entity/Components/Base.h"
+#include "Entity/Components/Renderable.h"
 
 #include "Util/Logger.h"
 
@@ -18,10 +19,32 @@ namespace Cosmos
 
 	void Scene::OnUpdate(float timestep)
 	{
+		// update meshes
+		auto meshView = mRegistry.view<TransformComponent, MeshComponent>();
+		for (auto ent : meshView)
+		{
+			auto [transformComponent, meshComponent] = meshView.get<TransformComponent, MeshComponent>(ent);
+
+			if (meshComponent.mesh == nullptr || !meshComponent.mesh->IsLoaded())
+				continue;
+
+			meshComponent.mesh->OnUpdate(timestep, transformComponent.GetTransform());
+		}
 	}
 
 	void Scene::OnRender()
 	{
+		// draw models
+		auto meshView = mRegistry.view<MeshComponent>();
+		for (auto ent : meshView)
+		{
+			auto [meshComponent] = meshView.get<MeshComponent>(ent);
+
+			if (meshComponent == nullptr || !meshComponent->IsLoaded())
+				continue;
+
+			meshComponent->OnRender();
+		}
 	}
 
 	void Scene::OnEvent(Shared<Event> event)

@@ -2,10 +2,13 @@
 #if defined COSMOS_RENDERER_VULKAN
 
 #include "Device.h"
+#include "Pipeline.h"
 #include "Renderpass.h"
 #include "VKMesh.h"
 #include "VKTexture.h"
 #include "VKRenderer.h"
+#include "Entity/Unique/Camera.h"
+#include "Renderer/Buffer.h"
 #include "Util/Logger.h"
 
 namespace Cosmos::Vulkan
@@ -261,6 +264,15 @@ namespace Cosmos::Vulkan
 
 	VKMesh::~VKMesh()
 	{
+		vkDeviceWaitIdle(mRenderer->GetDevice()->GetLogicalDevice());
+
+		for (size_t i = 0; i < mRenderer->GetConcurrentlyRenderedFramesCount(); i++)
+		{
+			vmaDestroyBuffer(mRenderer->GetDevice()->GetAllocator(), mUniformBuffers[i], mUniformBuffersMemory[i]);
+		}
+
+		vkDestroyDescriptorPool(mRenderer->GetDevice()->GetLogicalDevice(), mDescriptorPool, nullptr);
+
 		if (mVertexBuffer != VK_NULL_HANDLE)
 		{
 			vmaDestroyBuffer(mRenderer->GetDevice()->GetAllocator(), mVertexBuffer, mVertexMemory);
@@ -284,10 +296,20 @@ namespace Cosmos::Vulkan
 		mAnimations.resize(0);
 	}
 
-	void VKMesh::OnUpdate(float timestep)
+	void VKMesh::OnUpdate(float timestep, glm::mat4& transform)
 	{
-		if (mAnimations.empty())
-			return;
+		// update mvp
+		if (!mLoaded) return;
+
+		MVP_Buffer ubo = {};
+		ubo.model = transform;
+		ubo.view = mRenderer->GetCamera()->GetViewRef();
+		ubo.projection = mRenderer->GetCamera()->GetProjectionRef();
+
+		memcpy(mUniformBuffersMapped[mRenderer->GetCurrentFrame()], &ubo, sizeof(ubo));
+
+		// update animation
+		if (mAnimations.empty()) return;
 
 		COSMOS_LOG(Logger::Todo, "Animation system is not fully implemented");
 
@@ -355,9 +377,10 @@ namespace Cosmos::Vulkan
 		uint32_t currentFrame = mRenderer->GetCurrentFrame();
 		VkDeviceSize offsets[] = { 0 };
 		VkCommandBuffer cmdBuffer = mRenderer->GetRenderpassManager()->GetMainRenderpass()->GetSpecificationRef().commandBuffers[currentFrame];
-
+		
 		vkCmdBindVertexBuffers(cmdBuffer, 0, 1, &mVertexBuffer, offsets);
 		vkCmdBindIndexBuffer(cmdBuffer, mIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
+		vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mRenderer->GetPipelineLibrary()->GetPipelinesRef()["Mesh.Common"]->GetPipelineLayout(), 0, 1, &mDescriptorSets[mRenderer->GetCurrentFrame()], 0, nullptr);
 
 		for (auto& node : mNodes)
 			DrawNode(node, cmdBuffer);
@@ -467,6 +490,8 @@ namespace Cosmos::Vulkan
 		mAABB[3][0] = mDimensionMin[0];
 		mAABB[3][1] = mDimensionMin[1];
 		mAABB[3][2] = mDimensionMin[2];
+
+		mLoaded = true;
 	}
 
 	void VKMesh::CalculateBoundingBox(Node* node, Node* parent)
@@ -821,7 +846,20 @@ namespace Cosmos::Vulkan
 		if (node->mesh)
 		{
 			for (Primitive* primitive : node->mesh->primitives)
-				vkCmdDrawIndexed(commandBuffer, primitive->indexCount, 1, primitive->firstIndex, 0, 0);
+			{
+				vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mRenderer->GetPipelineLibrary()->GetPipelinesRef()["Mesh.Common"]->GetPipeline());
+				vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mRenderer->GetPipelineLibrary()->GetPipelinesRef()["Mesh.Common"]->GetPipelineLayout(), 0, 1, &mDescriptorSets[mRenderer->GetCurrentFrame()], 0, NULL);
+				
+				if (primitive->hasIndices) 
+				{
+					vkCmdDrawIndexed(commandBuffer, primitive->indexCount, 1, primitive->firstIndex, 0, 0);
+				}
+
+				else 
+				{
+					vkCmdDraw(commandBuffer, primitive->vertexCount, 1, 0, 0);
+				}
+			}
 		}
 
 		for (auto& child : node->children)
@@ -1121,7 +1159,83 @@ namespace Cosmos::Vulkan
 
 		delete[] loaderInfo.vertexbuffer;
 		delete[] loaderInfo.indexbuffer;
+
+		// model * view * projection ubo
+		mUniformBuffers.resize(mRenderer->GetConcurrentlyRenderedFramesCount());
+		mUniformBuffersMemory.resize(mRenderer->GetConcurrentlyRenderedFramesCount());
+		mUniformBuffersMapped.resize(mRenderer->GetConcurrentlyRenderedFramesCount());
+
+		for (size_t i = 0; i < mRenderer->GetConcurrentlyRenderedFramesCount(); i++)
+		{
+			// camera's ubo
+			mRenderer->GetDevice()->CreateBuffer
+			(
+				VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+				sizeof(MVP_Buffer),
+				&mUniformBuffers[i],
+				&mUniformBuffersMemory[i]
+			);
+
+			vmaMapMemory(mRenderer->GetDevice()->GetAllocator(), mUniformBuffersMemory[i], &mUniformBuffersMapped[i]);
+		}
+
+		// descriptor pool and descriptor sets
+		std::array<VkDescriptorPoolSize, 1> poolSizes = {};
+		poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		poolSizes[0].descriptorCount = mRenderer->GetConcurrentlyRenderedFramesCount();
+
+		VkDescriptorPoolCreateInfo descPoolCI = {};
+		descPoolCI.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+		descPoolCI.poolSizeCount = (uint32_t)poolSizes.size();
+		descPoolCI.pPoolSizes = poolSizes.data();
+		descPoolCI.maxSets = 2;
+		COSMOS_ASSERT(vkCreateDescriptorPool(mRenderer->GetDevice()->GetLogicalDevice(), &descPoolCI, nullptr, &mDescriptorPool) == VK_SUCCESS, "Failed to create descriptor pool");
+
+		std::vector<VkDescriptorSetLayout> layouts
+		(
+			mRenderer->GetConcurrentlyRenderedFramesCount(),
+			mRenderer->GetPipelineLibrary()->GetPipelinesRef()["Mesh.Common"] ->GetDescriptorSetLayout()
+		);
+
+		VkDescriptorSetAllocateInfo descSetAllocInfo = {};
+		descSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+		descSetAllocInfo.descriptorPool = mDescriptorPool;
+		descSetAllocInfo.descriptorSetCount = (uint32_t)mRenderer->GetConcurrentlyRenderedFramesCount();
+		descSetAllocInfo.pSetLayouts = layouts.data();
+
+		mDescriptorSets.resize(mRenderer->GetConcurrentlyRenderedFramesCount());
+		COSMOS_ASSERT(vkAllocateDescriptorSets(mRenderer->GetDevice()->GetLogicalDevice(), &descSetAllocInfo, mDescriptorSets.data()) == VK_SUCCESS, "Failed to allocate descriptor sets");
+
+		UpdateDescriptorSets();
 	}
-} 
+
+	void VKMesh::UpdateDescriptorSets()
+	{
+		for (size_t i = 0; i < mRenderer->GetConcurrentlyRenderedFramesCount(); i++)
+		{
+			std::vector<VkWriteDescriptorSet> descriptorWrites = {};
+
+			//
+			VkDescriptorBufferInfo cameraUBOInfo = {};
+			cameraUBOInfo.buffer = mUniformBuffers[i];
+			cameraUBOInfo.offset = 0;
+			cameraUBOInfo.range = sizeof(MVP_Buffer);
+
+			VkWriteDescriptorSet cameraUBODesc = {};
+			cameraUBODesc.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			cameraUBODesc.dstSet = mDescriptorSets[i];
+			cameraUBODesc.dstBinding = 0;
+			cameraUBODesc.dstArrayElement = 0;
+			cameraUBODesc.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			cameraUBODesc.descriptorCount = 1;
+			cameraUBODesc.pBufferInfo = &cameraUBOInfo;
+
+			descriptorWrites.push_back(cameraUBODesc);
+
+			vkUpdateDescriptorSets(mRenderer->GetDevice()->GetLogicalDevice(), (uint32_t)descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
+		}
+	}
+}
 
 #endif
