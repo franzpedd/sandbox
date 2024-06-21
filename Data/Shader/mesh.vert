@@ -19,8 +19,7 @@ layout(location = 1) out vec2 outFragTexCoord;
 void main()
 {
     // set vertex position on world
-    vec4 positionWorld = ubo.model * vec4(inPosition, 1.0);
-    gl_Position = ubo.proj * ubo.view * positionWorld;
+    gl_Position = ubo.proj * ubo.view * ubo.model * vec4(inPosition, 1.0);
 
     // output variables for the fragment shader
     outFragColor = inColor;

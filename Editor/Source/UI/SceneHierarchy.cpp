@@ -167,7 +167,8 @@ namespace Cosmos
 
 		DrawComponent<MeshComponent>("Mesh", mSelectedEntity, [&](MeshComponent& component)
 			{
-				if (component.mesh == nullptr) {
+				if (component.mesh == nullptr)
+				{
 					component.mesh = Mesh::Create(mRenderer);
 				}
 
@@ -177,7 +178,13 @@ namespace Cosmos
 				char buffer[EntityNameMaxChars];
 				memset(buffer, 0, sizeof(buffer));
 				std::strncpy(buffer, modelPath.c_str(), sizeof(buffer));
-				ImGui::InputTextWithHint("", "drop from explorer", buffer, sizeof(buffer), ImGuiInputTextFlags_ReadOnly);
+
+				ImGui::Text(ICON_LC_CUBOID " Mesh: ");
+				ImGui::SameLine();
+				
+				ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(5.0f, 2.0f));
+				ImGui::InputTextWithHint("", "drag and drop from explorer", buffer, sizeof(buffer), ImGuiInputTextFlags_ReadOnly);
+				ImGui::PopStyleVar();
 
 				if (ImGui::BeginDragDropTarget())
 				{
@@ -188,6 +195,14 @@ namespace Cosmos
 					}
 
 					ImGui::EndDragDropTarget();
+				}
+
+				ImGui::Separator();
+
+				// options
+				if (ImGui::Checkbox("Wiredframe", component.mesh->GetWiredframe()))
+				{
+
 				}
 			});
 	}

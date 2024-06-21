@@ -75,6 +75,10 @@ namespace Cosmos
 			entity->RemoveComponent<TransformComponent>();
 		}
 
+		if (entity->HasComponent<MeshComponent>()) {
+			entity->RemoveComponent<MeshComponent>();
+		}
+
 		mEntityMap.erase(entity->GetID());
 	}
 

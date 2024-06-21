@@ -13,6 +13,13 @@ namespace Cosmos
 	{
 	public:
 
+		enum RenderMode
+		{
+			Fill = 0, Wiredframe
+		};
+
+	public:
+
 		// returns a smart-ptr to a new mesh
 		static Shared<Mesh> Create(Shared<Renderer> renderer);
 
@@ -24,6 +31,9 @@ namespace Cosmos
 
 		// returns if the mesh is fully loaded
 		virtual bool IsLoaded() const = 0;
+
+		// gets the render mode to wiredframe/fill
+		virtual bool* GetWiredframe() = 0;
 
 	public:
 

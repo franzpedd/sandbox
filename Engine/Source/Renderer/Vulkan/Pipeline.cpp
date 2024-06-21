@@ -243,9 +243,9 @@ namespace Cosmos::Vulkan
         meshSpecification.fragmentShader = CreateShared<Shader>(mDevice, Shader::Type::Fragment, "Mesh.frag", GetAssetSubDir("Shader/mesh.frag"));
         meshSpecification.vertexComponents = 
         { 
-            Vertex::Component::POSITION, 
-            Vertex::Component::COLOR, 
-            Vertex::Component::NORMAL, 
+            Vertex::Component::POSITION,
+            Vertex::Component::COLOR,
+            Vertex::Component::NORMAL,
             Vertex::Component::UV0
         };
         
