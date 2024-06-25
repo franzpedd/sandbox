@@ -41,6 +41,7 @@ namespace Cosmos::Vulkan
 	VKUI::VKUI(Cosmos::Application* application)
 		: mApplication(application)
 	{
+		COSMOS_LOG(Logger::Todo, "Make an UI Library/Unorderedmap of currently loaded textures");
 		std::dynamic_pointer_cast<Vulkan::VKRenderer>(mApplication->GetRenderer())->GetRenderpassManager()->Insert("ImGui", VK_SAMPLE_COUNT_1_BIT);
 
 		CreateResources();

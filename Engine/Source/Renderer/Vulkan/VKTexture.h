@@ -15,7 +15,7 @@ namespace Cosmos::Vulkan
 	public:
 
 		// constructor
-		VKTexture2D(Shared<VKRenderer> renderer, const char* path, bool flip);
+		VKTexture2D(Shared<VKRenderer> renderer, std::string path, bool flip);
 
 		// destructor
 		~VKTexture2D();
@@ -39,7 +39,6 @@ namespace Cosmos::Vulkan
 	private:
 
 		Shared<VKRenderer> mRenderer;
-		const char* mPath = nullptr;
 
 		VkImage mImage = VK_NULL_HANDLE;
 		VmaAllocation mMemory = VK_NULL_HANDLE;
@@ -52,7 +51,7 @@ namespace Cosmos::Vulkan
 	public:
 
 		// constructor
-		VKTextureCubemap(Shared<VKRenderer> renderer, std::array<const char*, 6> paths, bool flip);
+		VKTextureCubemap(Shared<VKRenderer> renderer, std::array<std::string, 6> paths, bool flip);
 
 		// destructor
 		~VKTextureCubemap();
@@ -73,7 +72,6 @@ namespace Cosmos::Vulkan
 	private:
 
 		Shared<VKRenderer> mRenderer;
-		std::array<const char*, 6> mPaths = {};
 
 		VkImage mImage = VK_NULL_HANDLE;
 		VmaAllocation mMemory = VK_NULL_HANDLE;

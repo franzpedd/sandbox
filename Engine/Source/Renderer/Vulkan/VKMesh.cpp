@@ -34,6 +34,8 @@ namespace Cosmos::Vulkan
 		
 		for (size_t i = 0; i < mRenderer->GetConcurrentlyRenderedFramesCount(); i++)
 		{
+			if (i <= mUniformBuffersMemory.size()) break;
+
 			vmaUnmapMemory(mRenderer->GetDevice()->GetAllocator(), mUniformBuffersMemory[i]);
 			vmaDestroyBuffer(mRenderer->GetDevice()->GetAllocator(), mUniformBuffers[i], mUniformBuffersMemory[i]);
 		}
@@ -135,11 +137,6 @@ namespace Cosmos::Vulkan
 		mLoaded = true;
 	}
 
-	std::string& VKMesh::GetMaterialNameRef()
-	{
-		return mMaterial.name;
-	}
-
 	void VKMesh::SetColormapTexture(std::string filepath)
 	{
 		vkDeviceWaitIdle(mRenderer->GetDevice()->GetLogicalDevice());
@@ -148,10 +145,15 @@ namespace Cosmos::Vulkan
 		{
 			mMaterial.colormapTex.reset();
 			mMaterial.colormapPath = filepath;
-			mMaterial.colormapTex = Texture2D::Create(mRenderer, mMaterial.colormapPath.c_str());
+			mMaterial.colormapTex = Texture2D::Create(mRenderer, mMaterial.colormapPath.c_str(), true);
 		}
 
 		UpdateDescriptors();
+	}
+
+	Shared<Texture2D> VKMesh::GetColormapTexture()
+	{
+		return mMaterial.colormapTex;
 	}
 
 	void VKMesh::LoadGLTFNode(const tinygltf::Node& inputNode, const tinygltf::Model& input, Node* parent, std::vector<uint32_t>& indexBuffer, std::vector<Vertex>& vertexBuffer)
@@ -478,8 +480,6 @@ namespace Cosmos::Vulkan
 
 	void VKMesh::UpdateDescriptors()
 	{
-		COSMOS_LOG(Logger::Todo, "More than one material per mesh ?");
-
 		for (size_t i = 0; i < mRenderer->GetConcurrentlyRenderedFramesCount(); i++)
 		{
 			std::vector<VkWriteDescriptorSet> descriptorWrites = {};

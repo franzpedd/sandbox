@@ -125,5 +125,6 @@ namespace Cosmos
 
 		Shared<Camera> mCamera;
 		Mode mMode = Mode::UNDEFINED;
+		bool mSelectedButton = false;
 	};
 }

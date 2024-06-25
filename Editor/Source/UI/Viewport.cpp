@@ -51,8 +51,8 @@ namespace Cosmos
 			mContentRegionMax.y += ImGui::GetWindowPos().y;
 
 			// draw gizmos
-			DrawOverlayedMenu();
 			mSceneGizmos->DrawGizmos(mSceneHierarchy->GetSelectedEntityRef(), mCurrentSize);
+			DrawOverlayedMenu();
 		}
 
 		ImGui::End();
@@ -117,37 +117,65 @@ namespace Cosmos
 
 	void Viewport::DrawOverlayedMenu()
 	{
-		if (!ImGui::IsWindowDocked())
-		{
-			ImGui::SetNextWindowFocus();
-		}
-
 		// Set position to the top of the viewport
-		ImGui::SetNextWindowPos(ImVec2(mContentRegionMin.x, mContentRegionMin.y));
+		ImGui::SetNextWindowPos(ImVec2(mContentRegionMin.x + 2.0f, mContentRegionMin.y + 2.0f));
+		
+		ImGuiWindowFlags toolbarFlags = ImGuiWindowFlags_NoDecoration 
+			| ImGuiWindowFlags_NoMove
+			| ImGuiWindowFlags_NoScrollWithMouse
+			| ImGuiWindowFlags_NoSavedSettings;
 
-		if (ImGui::Begin("##GizmosMenu", nullptr, ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoDecoration))
+		if (ImGui::Begin("##GizmosMenu", nullptr, toolbarFlags))
 		{
-			if (ImGui::Button(ICON_LC_MOUSE_POINTER))
-			{
-				mSceneGizmos->SetMode(SceneGizmos::Mode::UNDEFINED);
-			}
+			ImGui::BringWindowToDisplayFront(ImGui::GetCurrentWindow());
 
-			if (ImGui::Button(ICON_LC_MOVE_3D))
+			static uint32_t selectedIndex = 0;
+			SceneGizmos::Mode mode = SceneGizmos::Mode::UNDEFINED;
+			std::string text = { ICON_LC_MOUSE_POINTER };
+
+			for (uint32_t i = 0; i < 4; i++)
 			{
-				mSceneGizmos->SetMode(SceneGizmos::Mode::TRANSLATE);
-			}
-			
-			if (ImGui::Button(ICON_LC_ROTATE_3D))
-			{
-				mSceneGizmos->SetMode(SceneGizmos::Mode::ROTATE);
-			}
-			
-			if (ImGui::Button(ICON_LC_SCALE_3D))
-			{
-				mSceneGizmos->SetMode(SceneGizmos::Mode::SCALE);
+				switch (i)
+				{
+					case 0:
+					{
+						mode = SceneGizmos::Mode::UNDEFINED;
+						text = ICON_LC_MOUSE_POINTER;
+						break;
+					}
+
+					case 1:
+					{
+						mode = SceneGizmos::Mode::TRANSLATE;
+						text = ICON_LC_MOVE_3D;
+						break;
+					}
+
+					case 2:
+					{
+						mode = SceneGizmos::Mode::ROTATE;
+						text = ICON_LC_ROTATE_3D;
+						break;
+					}
+
+					case 3:
+					{
+						mode = SceneGizmos::Mode::SCALE;
+						text = ICON_LC_SCALE_3D;
+						break;
+					}
+
+					default: break;
+				}
+
+				if (ImGui::Selectable(text.c_str(), selectedIndex == i))
+				{
+					mSceneGizmos->SetMode(mode);
+					selectedIndex = i;
+				}
 			}
 		}
-
+		
 		ImGui::End();
 	}
 

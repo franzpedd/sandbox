@@ -2,6 +2,7 @@
 
 #include "Util/Memory.h"
 #include <array>
+#include <string>
 
 namespace Cosmos
 {
@@ -47,13 +48,16 @@ namespace Cosmos
 	public:
 
 		// creates a texture from an input file
-		static Shared<Texture2D> Create(Shared<Renderer> renderer, const char* path, bool flip = false);
+		static Shared<Texture2D> Create(Shared<Renderer> renderer, std::string path, bool flip = false);
 
 		// constructor
 		Texture2D() = default;
 
 		// destructor
 		virtual ~Texture2D() = default;
+
+		// returns the texture's path
+		inline std::string GetPath() { return mPath; }
 
 		// returns the texture width
 		inline int32_t GetWidth() const { return mWidth; }
@@ -74,6 +78,7 @@ namespace Cosmos
 
 	protected:
 
+		std::string mPath = {};
 		int32_t mWidth = 0;
 		int32_t mHeight = 0;
 		int32_t mMipLevels = 1;
@@ -84,13 +89,16 @@ namespace Cosmos
 	public:
 
 		// creates a texture from an input file
-		static Shared<TextureCubemap> Create(Shared<Renderer> renderer, std::array<const char*, 6> paths, bool flip = false);
+		static Shared<TextureCubemap> Create(Shared<Renderer> renderer, std::array<std::string, 6> paths, bool flip = false);
 
 		// constructor
 		TextureCubemap() = default;
 
 		// destructor
 		virtual ~TextureCubemap() = default;
+
+		// returns the texture's path
+		inline std::array<std::string, 6> GetPath() { return mPaths; }
 
 		// returns the texture width
 		inline int32_t GetWidth() const { return mWidth; }
@@ -111,6 +119,7 @@ namespace Cosmos
 
 	protected:
 
+		std::array<std::string, 6> mPaths = {};
 		int32_t mWidth = 0;
 		int32_t mHeight = 0;
 		int32_t mMipLevels = 1;

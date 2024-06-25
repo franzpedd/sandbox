@@ -52,10 +52,10 @@ namespace Cosmos
 
 	public: // materials
 
-		// returns a reference to the material's name
-		virtual std::string& GetMaterialNameRef() = 0;
-
 		// modifies the mesh material's colormap
 		virtual void SetColormapTexture(std::string filepath) = 0;
+
+		// returns the colormap texture used by the material's mesh
+		virtual Shared<Texture2D> GetColormapTexture() = 0;
 	};
 }

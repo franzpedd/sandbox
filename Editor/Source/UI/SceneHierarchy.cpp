@@ -172,33 +172,73 @@ namespace Cosmos
 					component.mesh = Mesh::Create(mRenderer);
 				}
 
+				ImGui::SeparatorText("Mesh");
+
 				// path
-				constexpr unsigned int EntityNameMaxChars = 32;
-				auto modelPath = component.mesh->GetFilepath();
-				char buffer[EntityNameMaxChars];
-				memset(buffer, 0, sizeof(buffer));
-				std::strncpy(buffer, modelPath.c_str(), sizeof(buffer));
-
-				ImGui::Text(ICON_LC_CUBOID " Mesh: ");
-				ImGui::SameLine();
-				
-				ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(5.0f, 2.0f));
-				ImGui::InputTextWithHint("", "drag and drop from explorer", buffer, sizeof(buffer), ImGuiInputTextFlags_ReadOnly);
-				ImGui::PopStyleVar();
-
-				if (ImGui::BeginDragDropTarget())
 				{
-					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("EXPLORER"))
-					{
-						std::filesystem::path path = (const char*)payload->Data;
-						component.mesh->LoadFromFile(path.string());
-					}
+					std::filesystem::path path(component.mesh->GetFilepath());
 
-					ImGui::EndDragDropTarget();
+					constexpr unsigned int EntityNameMaxChars = 64;
+					auto mesh = path.filename().string();
+					char buffer[EntityNameMaxChars];
+					memset(buffer, 0, sizeof(buffer));
+					std::strncpy(buffer, mesh.c_str(), sizeof(buffer));
+
+					ImGui::Text(ICON_LC_CUBOID);
+					ImGui::SameLine();
+
+					ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(5.0f, 2.0f));
+					ImGui::InputTextWithHint("", "drag and drop from explorer", buffer, sizeof(buffer), ImGuiInputTextFlags_ReadOnly);
+					ImGui::PopStyleVar();
+
+					if (ImGui::BeginDragDropTarget())
+					{
+						if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("EXPLORER"))
+						{
+							std::filesystem::path path = (const char*)payload->Data;
+							component.mesh->LoadFromFile(path.string());
+						}
+
+						ImGui::EndDragDropTarget();
+					}
+				}
+				
+				ImGui::SeparatorText("Colormap");
+
+				// colormap
+				{
+					std::filesystem::path path = "";
+
+					if (component.mesh->GetColormapTexture())
+					{
+						path = std::filesystem::path(component.mesh->GetColormapTexture()->GetPath());
+					}
+					
+					constexpr unsigned int EntityNameMaxChars = 64;
+					auto colormapPath = path.filename().string();
+					char buffer[EntityNameMaxChars];
+					memset(buffer, 0, sizeof(buffer));
+					std::strncpy(buffer, colormapPath.c_str(), sizeof(buffer));
+
+					ImGui::Text(ICON_LC_IMAGE);
+					ImGui::SameLine();
+
+					ImGui::InputTextWithHint("", " drag and drop from explorer", buffer, sizeof(buffer), ImGuiInputTextFlags_ReadOnly);
+
+					if (ImGui::BeginDragDropTarget())
+					{
+						if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("EXPLORER"))
+						{
+							std::filesystem::path path = (const char*)payload->Data;
+							component.mesh->SetColormapTexture(path.string());
+						}
+
+						ImGui::EndDragDropTarget();
+					}
 				}
 
-				ImGui::Separator();
-
+				ImGui::SeparatorText("Settings");
+	
 				// options
 				if (ImGui::Checkbox("Wiredframe", component.mesh->GetWiredframe()))
 				{

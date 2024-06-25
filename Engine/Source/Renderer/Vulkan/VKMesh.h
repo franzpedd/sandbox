@@ -77,11 +77,11 @@ namespace Cosmos::Vulkan
 
 	public:
 
-		// returns a reference to the material's name
-		virtual std::string& GetMaterialNameRef() override;
-
 		// modifies the mesh material's colormap
 		virtual void SetColormapTexture(std::string filepath) override;
+
+		// returns the colormap texture used by the material's mesh
+		virtual Shared<Texture2D> GetColormapTexture() override;
 
 	private:
 
