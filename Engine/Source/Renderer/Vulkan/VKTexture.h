@@ -15,7 +15,7 @@ namespace Cosmos::Vulkan
 	public:
 
 		// constructor
-		VKTexture2D(Shared<VKRenderer> renderer, const char* path);
+		VKTexture2D(Shared<VKRenderer> renderer, const char* path, bool flip);
 
 		// destructor
 		~VKTexture2D();
@@ -52,7 +52,7 @@ namespace Cosmos::Vulkan
 	public:
 
 		// constructor
-		VKTextureCubemap(Shared<VKRenderer> renderer, std::array<const char*, 6> paths);
+		VKTextureCubemap(Shared<VKRenderer> renderer, std::array<const char*, 6> paths, bool flip);
 
 		// destructor
 		~VKTextureCubemap();

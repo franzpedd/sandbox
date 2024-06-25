@@ -22,9 +22,10 @@
 
 namespace Cosmos::Vulkan
 {
-	VKTexture2D::VKTexture2D(Shared<VKRenderer> renderer, const char* path)
+	VKTexture2D::VKTexture2D(Shared<VKRenderer> renderer, const char* path, bool flip)
 		: mRenderer(renderer), mPath(path)
 	{
+		stbi_set_flip_vertically_on_load(flip);
 		LoadTexture();
 
 		// image view
@@ -62,7 +63,7 @@ namespace Cosmos::Vulkan
 	{
 		int32_t channels;
 		stbi_uc* pixels = stbi_load(mPath, &mWidth, &mHeight, &channels, STBI_rgb_alpha);
-
+		
 		if (pixels == nullptr)
 		{
 			COSMOS_LOG(Logger::Assert, "Failed to load %s texture", mPath);
@@ -233,11 +234,12 @@ namespace Cosmos::Vulkan
 		mRenderer->GetDevice()->EndSingleTimeCommand(renderpass.commandPool, commandBuffer);
 	}
 
-	VKTextureCubemap::VKTextureCubemap(Shared<VKRenderer> renderer, std::array<const char*, 6> paths)
+	VKTextureCubemap::VKTextureCubemap(Shared<VKRenderer> renderer, std::array<const char*, 6> paths, bool flip)
 		: mRenderer(renderer), mPaths(paths)
 	{
 		COSMOS_LOG(Logger::Todo, "Create mipmaps for Vulkan Cubemaps");
 
+		stbi_set_flip_vertically_on_load(flip);
 		LoadTextures();
 
 		// image view
@@ -286,6 +288,8 @@ namespace Cosmos::Vulkan
 
 		void* data;
 		uint64_t memAddress;
+
+		stbi_set_flip_vertically_on_load(true);
 
 		for (uint8_t i = 0; i < mPaths.size(); i++)
 		{

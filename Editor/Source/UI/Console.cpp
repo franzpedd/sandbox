@@ -27,11 +27,12 @@ namespace Cosmos
 				}
 				case Logger::Severity::Info:
 				{
-					color = ImVec4(0.0f, 0.5f, 0.6f, 1.0f);
+					color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
 					ImGui::TextColored(color, ICON_FA_INFO_CIRCLE " %s", msg.message.c_str());
 
 					break;
 				}
+
 				case Logger::Severity::Todo:
 				{
 					color = ImVec4(0.0f, 1.0f, 0.0f, 1.0f);
@@ -39,6 +40,7 @@ namespace Cosmos
 
 					break;
 				}
+
 				case Logger::Severity::Warn:
 				{
 					color = ImVec4(1.0f, 1.0f, 0.0f, 1.0f);
@@ -46,6 +48,7 @@ namespace Cosmos
 
 					break;
 				}
+
 				case Logger::Severity::Error:
 				{
 					color = ImVec4(1.0f, 0.65f, 0.0f, 1.0f);

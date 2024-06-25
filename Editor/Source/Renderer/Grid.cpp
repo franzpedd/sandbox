@@ -46,6 +46,7 @@ namespace Cosmos
 		ubo.model = glm::mat4(1.0f);
 		ubo.view = mRenderer->GetCamera()->GetViewRef();
 		ubo.projection = mRenderer->GetCamera()->GetProjectionRef();
+		ubo.cameraPos = mRenderer->GetCamera()->GetPositionRef();
 
 		memcpy(mUniformBuffersMapped[mRenderer->GetCurrentFrame()], &ubo, sizeof(ubo));
 	}

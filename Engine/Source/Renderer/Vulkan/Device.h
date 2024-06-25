@@ -115,7 +115,7 @@ namespace Cosmos::Vulkan
 		VkFormat FindSuitableDepthFormat();
 
 		// creates an image based on specification
-		void CreateImage(uint32_t width, uint32_t height, uint32_t mipLevels, uint32_t arrayLayers, VkSampleCountFlagBits samples, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VmaAllocation& allocation, VkImageCreateFlags flags = 0);
+		void CreateImage(uint32_t width, uint32_t height, uint32_t mipLevels, uint32_t arrayLayers, VkSampleCountFlagBits samples, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VmaAllocation& allocation, VkImageCreateFlags flags = 0, VmaAllocationCreateFlags vmaFlags = 0);
 
 		// creates an image view based on specification
 		VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspect, uint32_t mipLevel = 1, uint32_t layerCount = 1, VkImageViewType viewType = VK_IMAGE_VIEW_TYPE_2D);

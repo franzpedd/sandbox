@@ -122,6 +122,9 @@ namespace Cosmos::Vulkan
         // create globally-used pipeline for skybox
         void CreateSkyboxPipeline();
 
+        // creates globally-used pipeline for the BRDF
+        void CreateBRDFPipeline();
+
 	private:
 
 		Shared<Device> mDevice;

@@ -18,7 +18,7 @@ namespace Cosmos
 		mImDemo = new ImDemo();
 		mConsole = new Console();
 		mSceneHierarchy = new SceneHierarchy(mRenderer, mScene);
-		mViewport = new Viewport(mWindow, mRenderer, mUI);
+		mViewport = new Viewport(mWindow, mRenderer, mUI, mSceneHierarchy);
 
 		// grid uses viewport's renderpass, must be created after it
 		mGrid = new Grid(mRenderer);

@@ -169,8 +169,7 @@ namespace Cosmos::Vulkan
         {
             case Vertex::Component::POSITION: return VkVertexInputAttributeDescription({ location, binding, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, position) });
             case Vertex::Component::NORMAL: return VkVertexInputAttributeDescription({ location, binding, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, normal) });
-            case Vertex::Component::UV0: return VkVertexInputAttributeDescription({ location, binding, VK_FORMAT_R32G32_SFLOAT, offsetof(Vertex, uv0) });
-            case Vertex::Component::UV1: return VkVertexInputAttributeDescription({ location, binding, VK_FORMAT_R32G32_SFLOAT, offsetof(Vertex, uv1) });
+            case Vertex::Component::UV: return VkVertexInputAttributeDescription({ location, binding, VK_FORMAT_R32G32_SFLOAT, offsetof(Vertex, uv) });
             case Vertex::Component::JOINT: return VkVertexInputAttributeDescription({ location, binding, VK_FORMAT_R32G32B32A32_UINT, offsetof(Vertex, joint) });
             case Vertex::Component::WEIGHT: return VkVertexInputAttributeDescription({ location, binding, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(Vertex, weight) });
             case Vertex::Component::COLOR: return VkVertexInputAttributeDescription({ location, binding, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(Vertex, color) });
@@ -233,6 +232,7 @@ namespace Cosmos::Vulkan
     {
         CreateMeshPipeline();
         CreateSkyboxPipeline();
+        CreateBRDFPipeline();
     }
 
     void PipelineLibrary::CreateMeshPipeline()
@@ -246,10 +246,10 @@ namespace Cosmos::Vulkan
             Vertex::Component::POSITION,
             Vertex::Component::COLOR,
             Vertex::Component::NORMAL,
-            Vertex::Component::UV0
+            Vertex::Component::UV
         };
         
-        meshSpecification.bindings.resize(1);
+        meshSpecification.bindings.resize(2);
         
         // model view projection
         meshSpecification.bindings[0].binding = 0;
@@ -257,6 +257,13 @@ namespace Cosmos::Vulkan
         meshSpecification.bindings[0].descriptorCount = 1;
         meshSpecification.bindings[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
         meshSpecification.bindings[0].pImmutableSamplers = nullptr;
+
+        // color map
+        meshSpecification.bindings[1].binding = 1;
+        meshSpecification.bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        meshSpecification.bindings[1].descriptorCount = 1;
+        meshSpecification.bindings[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+        meshSpecification.bindings[1].pImmutableSamplers = nullptr;
         
         // common
         {
@@ -278,6 +285,7 @@ namespace Cosmos::Vulkan
             // modify parameters after initial creation
             mPipelines["Mesh.Wireframed"]->GetSpecificationRef().RSCI.cullMode = VK_CULL_MODE_BACK_BIT;
             mPipelines["Mesh.Wireframed"]->GetSpecificationRef().RSCI.polygonMode = VK_POLYGON_MODE_LINE;
+            mPipelines["Mesh.Wireframed"]->GetSpecificationRef().RSCI.lineWidth = 5.0f;
         
             // build the pipeline
             mPipelines["Mesh.Wireframed"]->Build(mCache);
@@ -316,6 +324,23 @@ namespace Cosmos::Vulkan
 
         // build the pipeline
         mPipelines["Skybox"]->Build(mCache);
+    }
+
+    void PipelineLibrary::CreateBRDFPipeline()
+    {
+        COSMOS_LOG(Logger::Todo, "Re-arrenge how render pass are created and enforce only MSAA and RenderPass no pipeline creation");
+        //Pipeline::Specification BRDFPipeline = {};
+        //BRDFPipeline.renderPass = mRenderpassManager->GetMainRenderpass();
+        //BRDFPipeline.vertexShader = CreateShared<Shader>(mDevice, Shader::Type::Vertex, "BRDF.vert", GetAssetSubDir("Shader/brdf.vert"));
+        //BRDFPipeline.fragmentShader = CreateShared<Shader>(mDevice, Shader::Type::Fragment, "BRDF.frag", GetAssetSubDir("Shader/brdf.frag"));
+        //BRDFPipeline.vertexComponents = { };
+        //BRDFPipeline.bindings.resize(0);
+        //
+        //// create
+        //mPipelines["BRDF"] = CreateShared<Pipeline>(mDevice, BRDFPipeline);
+        //
+        //// build the pipeline
+        //mPipelines["BRDF"]->Build(mCache);
     }
 }
 

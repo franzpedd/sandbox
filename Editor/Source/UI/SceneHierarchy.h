@@ -15,7 +15,7 @@ namespace Cosmos
 		~SceneHierarchy();
 
 		// returns a pointer to the currently selected entity
-		inline Shared<Entity> GetSelectedEntity() const { return mSelectedEntity; }
+		inline Shared<Entity>& GetSelectedEntityRef() { return mSelectedEntity; }
 
 		// unslects the selected entity
 		inline void UnselectEntity() { mSelectedEntity = nullptr; }

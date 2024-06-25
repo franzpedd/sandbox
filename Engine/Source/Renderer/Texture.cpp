@@ -39,19 +39,19 @@ namespace Cosmos
 		return Filter::FILTER_NEAREST;
 	}
 
-	Shared<Texture2D> Cosmos::Texture2D::Create(Shared<Renderer> renderer, const char* path)
+	Shared<Texture2D> Cosmos::Texture2D::Create(Shared<Renderer> renderer, const char* path, bool flip)
 	{
 #if defined COSMOS_RENDERER_VULKAN
-		return CreateShared<Vulkan::VKTexture2D>(std::dynamic_pointer_cast<Vulkan::VKRenderer>(renderer), path);
+		return CreateShared<Vulkan::VKTexture2D>(std::dynamic_pointer_cast<Vulkan::VKRenderer>(renderer), path, flip);
 #else
 		return Shared<Texture2D>();
 #endif
 	}
 
-	Shared<TextureCubemap> TextureCubemap::Create(Shared<Renderer> renderer, std::array<const char*, 6> paths)
+	Shared<TextureCubemap> TextureCubemap::Create(Shared<Renderer> renderer, std::array<const char*, 6> paths, bool flip)
 	{
 #if defined COSMOS_RENDERER_VULKAN
-		return CreateShared<Vulkan::VKTextureCubemap>(std::dynamic_pointer_cast<Vulkan::VKRenderer>(renderer), paths);
+		return CreateShared<Vulkan::VKTextureCubemap>(std::dynamic_pointer_cast<Vulkan::VKRenderer>(renderer), paths, flip);
 #else
 		return Shared<TextureCubemap>();
 #endif

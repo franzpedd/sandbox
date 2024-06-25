@@ -47,7 +47,7 @@ namespace Cosmos
 	public:
 
 		// creates a texture from an input file
-		static Shared<Texture2D> Create(Shared<Renderer> renderer, const char* path);
+		static Shared<Texture2D> Create(Shared<Renderer> renderer, const char* path, bool flip = false);
 
 		// constructor
 		Texture2D() = default;
@@ -84,7 +84,7 @@ namespace Cosmos
 	public:
 
 		// creates a texture from an input file
-		static Shared<TextureCubemap> Create(Shared<Renderer> renderer, std::array<const char*, 6> paths);
+		static Shared<TextureCubemap> Create(Shared<Renderer> renderer, std::array<const char*, 6> paths, bool flip = false);
 
 		// constructor
 		TextureCubemap() = default;

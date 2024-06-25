@@ -1,12 +1,14 @@
 #include "Viewport.h"
 
+#include "SceneHierarchy.h"
 #include <array>
 
 namespace Cosmos
 {
-	Viewport::Viewport(Shared<Window> window, Shared<Renderer> renderer, Shared<UI> ui)
-		: Widget("Viewport"), mWindow(window), mRenderer(renderer), mUI(ui)
+	Viewport::Viewport(Shared<Window> window, Shared<Renderer> renderer, Shared<UI> ui, SceneHierarchy* sceneHierarchy)
+		: Widget("Viewport"), mWindow(window), mRenderer(renderer), mUI(ui), mSceneHierarchy(sceneHierarchy)
 	{
+		mSceneGizmos = CreateShared<SceneGizmos>(mRenderer->GetCamera());
 		CreateRendererResources();
 	}
 
@@ -48,8 +50,9 @@ namespace Cosmos
 			mContentRegionMax.x += ImGui::GetWindowPos().x;
 			mContentRegionMax.y += ImGui::GetWindowPos().y;
 
-			// draw gizmos on selected entity
-			//DrawGizmos();
+			// draw gizmos
+			DrawOverlayedMenu();
+			mSceneGizmos->DrawGizmos(mSceneHierarchy->GetSelectedEntityRef(), mCurrentSize);
 		}
 
 		ImGui::End();
@@ -110,6 +113,42 @@ namespace Cosmos
 
 			CreateFramebufferResources();
 		}
+	}
+
+	void Viewport::DrawOverlayedMenu()
+	{
+		if (!ImGui::IsWindowDocked())
+		{
+			ImGui::SetNextWindowFocus();
+		}
+
+		// Set position to the top of the viewport
+		ImGui::SetNextWindowPos(ImVec2(mContentRegionMin.x, mContentRegionMin.y));
+
+		if (ImGui::Begin("##GizmosMenu", nullptr, ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoDecoration))
+		{
+			if (ImGui::Button(ICON_LC_MOUSE_POINTER))
+			{
+				mSceneGizmos->SetMode(SceneGizmos::Mode::UNDEFINED);
+			}
+
+			if (ImGui::Button(ICON_LC_MOVE_3D))
+			{
+				mSceneGizmos->SetMode(SceneGizmos::Mode::TRANSLATE);
+			}
+			
+			if (ImGui::Button(ICON_LC_ROTATE_3D))
+			{
+				mSceneGizmos->SetMode(SceneGizmos::Mode::ROTATE);
+			}
+			
+			if (ImGui::Button(ICON_LC_SCALE_3D))
+			{
+				mSceneGizmos->SetMode(SceneGizmos::Mode::SCALE);
+			}
+		}
+
+		ImGui::End();
 	}
 
 	void Viewport::CreateRendererResources()
@@ -336,6 +375,63 @@ namespace Cosmos
 				framebufferCI.layers = 1;
 				COSMOS_ASSERT(vkCreateFramebuffer(vkRenderer->GetDevice()->GetLogicalDevice(), &framebufferCI, nullptr, &renderpass.frameBuffers[i]) == VK_SUCCESS, "Failed to create framebuffer");
 			}
+		}
+	}
+
+	SceneGizmos::SceneGizmos(Shared<Camera> camera)
+		: mCamera(camera)
+	{
+	}
+
+	void SceneGizmos::DrawGizmos(Shared<Entity>& entity, ImVec2 viewportSize)
+	{
+		// gizmos on entity
+		if (!entity) return;
+		if (mMode == Mode::UNDEFINED) return;
+		if (!entity->HasComponent<TransformComponent>()) return;
+			
+		ImGuizmo::SetOrthographic(false); // 3D engine dont have orthographic but perspective
+		ImGuizmo::SetDrawlist();
+
+		// viewport rect
+		float windowWidth = (float)ImGui::GetWindowWidth();
+		float windowHeight = (float)ImGui::GetWindowHeight();
+		ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, windowWidth, windowHeight);
+
+		// camera
+		glm::mat4 view = mCamera->GetViewRef();
+		glm::mat4 proj = glm::perspectiveRH(glm::radians(mCamera->GetFov()), viewportSize.x / viewportSize.y, mCamera->GetNear(), mCamera->GetFar());
+
+		// entity
+		auto& tc = entity->GetComponent<TransformComponent>();
+		glm::mat4 transform = tc.GetTransform();
+
+		// snapping
+		bool snap = ImGui::IsKeyDown(ImGuiKey_LeftCtrl);
+		float snapValue = mMode == Mode::ROTATE ? 5.0f : 0.1f;
+		float snapValues[3] = { snapValue, snapValue, snapValue };
+
+		// gizmos drawing
+		ImGuizmo::Manipulate
+		(
+			glm::value_ptr(view),
+			glm::value_ptr(proj),
+			(ImGuizmo::OPERATION)mMode,
+			ImGuizmo::MODE::LOCAL,
+			glm::value_ptr(transform),
+			nullptr,
+			!snap ? snapValues : nullptr
+		);
+
+		if (ImGuizmo::IsUsing())
+		{
+			glm::vec3 translation, rotation, scale;
+			Decompose(transform, translation, rotation, scale);
+
+			glm::vec3 deltaRotation = rotation - tc.rotation;
+			tc.translation = translation;
+			tc.rotation += deltaRotation;
+			tc.scale = scale;
 		}
 	}
 }

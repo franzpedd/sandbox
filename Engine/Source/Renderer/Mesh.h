@@ -8,14 +8,18 @@ namespace Cosmos
 {
 	// forward declarations
 	class Renderer;
+	class Texture2D;
 
 	class Mesh
 	{
 	public:
 
-		enum RenderMode
+		struct Material
 		{
-			Fill = 0, Wiredframe
+			std::string name = { "Base Material" };	// material's name
+
+			std::string colormapPath;				// color-map path
+			Shared<Texture2D> colormapTex;			// color-map texture
 		};
 
 	public:
@@ -45,5 +49,13 @@ namespace Cosmos
 
 		// loads the model from a filepath
 		virtual void LoadFromFile(std::string filepath, float scale = 1.0f) = 0;
+
+	public: // materials
+
+		// returns a reference to the material's name
+		virtual std::string& GetMaterialNameRef() = 0;
+
+		// modifies the mesh material's colormap
+		virtual void SetColormapTexture(std::string filepath) = 0;
 	};
 }

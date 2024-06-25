@@ -5,7 +5,6 @@
 #define MAX_NUM_JOINTS 128u
 
 #include "Physics/BoundingBox.h"
-#include "Renderer/Material.h"
 #include "Renderer/Mesh.h"
 #include "Renderer/Vertex.h"
 #include "Renderer/Texture.h"
@@ -28,7 +27,6 @@ namespace Cosmos::Vulkan
 		{
 			uint32_t firstIndex;
 			uint32_t indexCount;
-			int32_t materialIndex;
 		};
 
 		// contains the node's (optional) geometry and can be made up of an arbitrary number of primitives
@@ -77,10 +75,15 @@ namespace Cosmos::Vulkan
 		// loads the model from a filepath
 		virtual void LoadFromFile(std::string filepath, float scale = 1.0f) override;
 
-	private:
+	public:
 
-		// loads all materials used by the mesh
-		void LoadMaterials(tinygltf::Model& model);
+		// returns a reference to the material's name
+		virtual std::string& GetMaterialNameRef() override;
+
+		// modifies the mesh material's colormap
+		virtual void SetColormapTexture(std::string filepath) override;
+
+	private:
 
 		// loads a node graph from the gltf model
 		void LoadGLTFNode(const tinygltf::Node& inputNode, const tinygltf::Model& input, Node* parent, std::vector<uint32_t>& indexBuffer, std::vector<Vertex>& vertexBuffer);
@@ -105,7 +108,7 @@ namespace Cosmos::Vulkan
 		bool mWiredframe = false;
 
 		std::vector<Node*> mNodes = {};
-		std::vector<Material> mMaterials = {};
+		Material mMaterial = {};
 
 		// raw buffers
 		std::vector<uint32_t> mRawIndexBuffer = {};

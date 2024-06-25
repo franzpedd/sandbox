@@ -2,6 +2,9 @@
 #if defined COSMOS_RENDERER_VULKAN
 
 #include "Renderer/Renderer.h"
+#include <volk.h>
+#include "Wrapper/vma.h" // including vma after volk
+
 #include <vector>
 
 // forward declarations
@@ -60,11 +63,23 @@ namespace Cosmos::Vulkan
 
 	private:		
 
-		Shared<Vulkan::Instance> mInstance;
-		Shared<Vulkan::Device> mDevice;
-		Shared<Vulkan::RenderpassManager> mRenderpassManager;
-		Shared<Vulkan::Swapchain> mSwapchain;
-		Shared<Vulkan::PipelineLibrary> mPipelineLibrary;
+		Shared<Instance> mInstance;
+		Shared<Device> mDevice;
+		Shared<RenderpassManager> mRenderpassManager;
+		Shared<Swapchain> mSwapchain;
+		Shared<PipelineLibrary> mPipelineLibrary;
+
+	private: // pbr
+
+		// generate a BRDF integration map storing roughness/NdotV as a look-up-table
+		void CreateBRDFLookUpTable();
+
+	private:
+
+		VkImage mBRDFImage;
+		VmaAllocation mBRDFMemory;
+		VkImageView mBRDFImageView;
+		VkSampler mBRDFSampler;
 	};
 }
 

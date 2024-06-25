@@ -271,7 +271,7 @@ namespace Cosmos::Vulkan
 		return FindSuitableFormat(candidates, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 	}
 
-	void Device::CreateImage(uint32_t width, uint32_t height, uint32_t mipLevels, uint32_t arrayLayers, VkSampleCountFlagBits samples, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VmaAllocation& allocation, VkImageCreateFlags flags)
+	void Device::CreateImage(uint32_t width, uint32_t height, uint32_t mipLevels, uint32_t arrayLayers, VkSampleCountFlagBits samples, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VmaAllocation& allocation, VkImageCreateFlags flags, VmaAllocationCreateFlags vmaFlags)
 	{
 		// specify image
 		VkImageCreateInfo imageCI = {};
@@ -293,6 +293,7 @@ namespace Cosmos::Vulkan
 		// specify vma info
 		VmaAllocationCreateInfo vmaCI = {};
 		vmaCI.usage = VMA_MEMORY_USAGE_AUTO;
+		vmaCI.flags = vmaFlags;
 
 		// create image
 		COSMOS_ASSERT(vmaCreateImage(mAllocator, &imageCI, &vmaCI, &image, &allocation, nullptr) == VK_SUCCESS, "Failed to create image");

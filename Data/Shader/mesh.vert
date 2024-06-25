@@ -6,6 +6,7 @@ layout(binding = 0) uniform MVP_UBO
     mat4 model;
     mat4 view;
     mat4 proj;
+    vec3 cameraPos;
 } ubo;
 
 layout(location = 0) in vec3 inPosition;

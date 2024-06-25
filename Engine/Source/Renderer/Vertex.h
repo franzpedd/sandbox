@@ -10,8 +10,7 @@ namespace Cosmos
         {
             POSITION = 0,
             NORMAL,
-            UV0,
-            UV1,
+            UV,
             JOINT,
             WEIGHT,
             COLOR
@@ -19,8 +18,7 @@ namespace Cosmos
 
         glm::vec3 position;
         glm::vec3 normal;
-        glm::vec2 uv0;
-        glm::vec2 uv1;
+        glm::vec2 uv;
         glm::uvec4 joint;
         glm::vec4 weight;
         glm::vec4 color;
@@ -30,8 +28,7 @@ namespace Cosmos
         {
             return position == other.position
                 && normal == other.normal
-                && uv0 == other.uv0
-                && uv1 == other.uv1
+                && uv == other.uv
                 && joint == other.joint
                 && weight == other.weight
                 && color == other.color;

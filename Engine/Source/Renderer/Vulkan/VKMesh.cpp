@@ -9,6 +9,7 @@
 #include "VKRenderer.h"
 #include "Entity/Unique/Camera.h"
 #include "Renderer/Buffer.h"
+#include "Util/Files.h"
 #include "Util/Logger.h"
 
 namespace Cosmos::Vulkan
@@ -24,6 +25,7 @@ namespace Cosmos::Vulkan
 	VKMesh::VKMesh(Shared<VKRenderer> renderer)
 		: mRenderer(renderer)
 	{
+		mMaterial.colormapPath = GetAssetSubDir("Texture/Default/Mesh_Colormap.png");
 	}
 
 	VKMesh::~VKMesh()
@@ -60,6 +62,7 @@ namespace Cosmos::Vulkan
 		ubo.model = transform;
 		ubo.view = mRenderer->GetCamera()->GetViewRef();
 		ubo.projection = mRenderer->GetCamera()->GetProjectionRef();
+		ubo.cameraPos = mRenderer->GetCamera()->GetPositionRef();
 
 		memcpy(mUniformBuffersMapped[mRenderer->GetCurrentFrame()], &ubo, sizeof(ubo));
 	}
@@ -112,8 +115,6 @@ namespace Cosmos::Vulkan
 			COSMOS_LOG(Logger::Error, "Loading mesh %s with warning(s): %s", filepath.c_str(), warning.c_str());
 		}
 
-		LoadMaterials(model);
-
 		const tinygltf::Scene& scene = model.scenes[0];
 
 		for (size_t i = 0; i < scene.nodes.size(); i++)
@@ -134,60 +135,23 @@ namespace Cosmos::Vulkan
 		mLoaded = true;
 	}
 
-	void VKMesh::LoadMaterials(tinygltf::Model& model)
+	std::string& VKMesh::GetMaterialNameRef()
 	{
-		for (tinygltf::Material& mat : model.materials)
+		return mMaterial.name;
+	}
+
+	void VKMesh::SetColormapTexture(std::string filepath)
+	{
+		vkDeviceWaitIdle(mRenderer->GetDevice()->GetLogicalDevice());
+
+		if (mMaterial.colormapTex)
 		{
-			Material material = {};
-			material.GetSpecificationRef().doubleSided = mat.doubleSided;
-
-			if (mat.values.find("roughnessFactor") != mat.values.end())
-			{
-				material.GetMetallicRoughnessWorkflow().roughnessFactor = static_cast<float>(mat.values["roughnessFactor"].Factor());
-			}
-			
-			// THIS IS BELONGS TO THE METALLIC-ROUGHNESS WORKFLOW
-			if (mat.values.find("metallicFactor") != mat.values.end())
-			{
-				material.GetMetallicRoughnessWorkflow().metallicFactor = static_cast<float>(mat.values["metallicFactor"].Factor());
-			}
-
-			if (mat.values.find("baseColorFactor") != mat.values.end())
-			{
-				material.GetSpecificationRef().baseColorFactor = glm::make_vec4(mat.values["baseColorFactor"].ColorFactor().data());
-			}
-
-			if (mat.additionalValues.find("alphaMode") != mat.additionalValues.end())
-			{
-				tinygltf::Parameter param = mat.additionalValues["alphaMode"];
-				if (param.string_value == "BLEND")
-				{
-					material.GetSpecificationRef().alphaChannel = Material::AlphaChannel::BLEND;
-				}
-
-				if (param.string_value == "MASK")
-				{
-					material.GetSpecificationRef().alhpaCutoff = 0.5f;
-					material.GetSpecificationRef().alphaChannel = Material::AlphaChannel::MASK;
-				}
-			}
-
-			if (mat.additionalValues.find("alphaCutoff") != mat.additionalValues.end())
-			{
-				material.GetSpecificationRef().alhpaCutoff = static_cast<float>(mat.additionalValues["alphaCutoff"].Factor());
-			}
-
-			if (mat.additionalValues.find("emissiveFactor") != mat.additionalValues.end())
-			{
-				material.GetSpecificationRef().emissiveFactor = glm::vec4(glm::make_vec3(mat.additionalValues["emissiveFactor"].ColorFactor().data()), 1.0);
-			}
-
-			material.GetSpecificationRef().index = static_cast<uint32_t>(mMaterials.size());
-			mMaterials.push_back(material);
+			mMaterial.colormapTex.reset();
+			mMaterial.colormapPath = filepath;
+			mMaterial.colormapTex = Texture2D::Create(mRenderer, mMaterial.colormapPath.c_str());
 		}
 
-		// push a default material at the end of the list for meshes with no material assigned
-		mMaterials.push_back(Material());
+		UpdateDescriptors();
 	}
 
 	void VKMesh::LoadGLTFNode(const tinygltf::Node& inputNode, const tinygltf::Model& input, Node* parent, std::vector<uint32_t>& indexBuffer, std::vector<Vertex>& vertexBuffer)
@@ -278,7 +242,7 @@ namespace Cosmos::Vulkan
 						Vertex vert{};
 						vert.position = glm::vec3(glm::make_vec3(&positionBuffer[v * 3]));
 						vert.normal = glm::normalize(glm::vec3(normalsBuffer ? glm::make_vec3(&normalsBuffer[v * 3]) : glm::vec3(0.0f)));
-						vert.uv0 = texCoordsBuffer ? glm::make_vec2(&texCoordsBuffer[v * 2]) : glm::vec3(0.0f);
+						vert.uv = texCoordsBuffer ? glm::make_vec2(&texCoordsBuffer[v * 2]) : glm::vec3(0.0f);
 						vert.color = glm::vec4(1.0f);
 						vertexBuffer.push_back(vert);
 					}
@@ -338,7 +302,6 @@ namespace Cosmos::Vulkan
 				Primitive primitive = {};
 				primitive.firstIndex = firstIndex;
 				primitive.indexCount = indexCount;
-				primitive.materialIndex = glTFPrimitive.material;
 				node->mesh.primitives.push_back(primitive);
 			}
 		}
@@ -466,10 +429,17 @@ namespace Cosmos::Vulkan
 			vmaMapMemory(mRenderer->GetDevice()->GetAllocator(), mUniformBuffersMemory[i], &mUniformBuffersMapped[i]);
 		}
 
+		// textures
+		mMaterial.colormapTex = VKTexture2D::Create(mRenderer, mMaterial.colormapPath.c_str(), true);
+
 		// descriptor pool and descriptor sets
-		std::array<VkDescriptorPoolSize, 1> poolSizes = {};
+		std::array<VkDescriptorPoolSize, 2> poolSizes = {};
 		poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		poolSizes[0].descriptorCount = mRenderer->GetConcurrentlyRenderedFramesCount();
+
+		constexpr unsigned int imagesCount = 1; // baseColor ////, normal, occlusion, emissive, metallicRoughness
+		poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		poolSizes[1].descriptorCount = mRenderer->GetConcurrentlyRenderedFramesCount() * imagesCount;
 
 		VkDescriptorPoolCreateInfo descPoolCI = {};
 		descPoolCI.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -508,16 +478,18 @@ namespace Cosmos::Vulkan
 
 	void VKMesh::UpdateDescriptors()
 	{
+		COSMOS_LOG(Logger::Todo, "More than one material per mesh ?");
+
 		for (size_t i = 0; i < mRenderer->GetConcurrentlyRenderedFramesCount(); i++)
 		{
 			std::vector<VkWriteDescriptorSet> descriptorWrites = {};
 		
-			//
+			// camera's ubo
 			VkDescriptorBufferInfo cameraUBOInfo = {};
 			cameraUBOInfo.buffer = mUniformBuffers[i];
 			cameraUBOInfo.offset = 0;
 			cameraUBOInfo.range = sizeof(MVP_Buffer);
-		
+			//
 			VkWriteDescriptorSet cameraUBODesc = {};
 			cameraUBODesc.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 			cameraUBODesc.dstSet = mDescriptorSets[i];
@@ -526,9 +498,24 @@ namespace Cosmos::Vulkan
 			cameraUBODesc.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 			cameraUBODesc.descriptorCount = 1;
 			cameraUBODesc.pBufferInfo = &cameraUBOInfo;
-		
 			descriptorWrites.push_back(cameraUBODesc);
-		
+
+			// color map ubo
+			VkDescriptorImageInfo colorMapInfo = {};
+			colorMapInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			colorMapInfo.imageView = (VkImageView)mMaterial.colormapTex->GetView();
+			colorMapInfo.sampler = (VkSampler)mMaterial.colormapTex->GetSampler();
+			//
+			VkWriteDescriptorSet colorMapDec = {};
+			colorMapDec.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			colorMapDec.dstSet = mDescriptorSets[i];
+			colorMapDec.dstBinding = 1;
+			colorMapDec.dstArrayElement = 0;
+			colorMapDec.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			colorMapDec.descriptorCount = 1;
+			colorMapDec.pImageInfo = &colorMapInfo;
+			descriptorWrites.push_back(colorMapDec);
+
 			vkUpdateDescriptorSets(mRenderer->GetDevice()->GetLogicalDevice(), (uint32_t)descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
 		}
 	}

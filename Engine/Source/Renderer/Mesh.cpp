@@ -1,6 +1,7 @@
 #include "epch.h"
 #include "Mesh.h"
 
+#include "Texture.h"
 #include "Vulkan/VKMesh.h"
 #include "Vulkan/VKRenderer.h"
 
