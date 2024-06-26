@@ -77,6 +77,11 @@ namespace Cosmos::Vulkan
 
 	public:
 
+		// sets the mesh as mouse-picked or not
+		inline virtual void SetPicked(bool value) override { mPicked = value; }
+
+	public:
+
 		// modifies the mesh material's colormap
 		virtual void SetColormapTexture(std::string filepath) override;
 
@@ -104,6 +109,7 @@ namespace Cosmos::Vulkan
 
 		Shared<VKRenderer> mRenderer;
 		std::string mFilepath = {};
+		bool mPicked = false;
 		bool mLoaded = false;
 		bool mWiredframe = false;
 
@@ -129,6 +135,11 @@ namespace Cosmos::Vulkan
 		std::vector<VkBuffer> mUniformBuffers = {};
 		std::vector<VmaAllocation> mUniformBuffersMemory = {};
 		std::vector<void*> mUniformBuffersMapped = {};
+
+		// utilities buffer
+		std::vector<VkBuffer> mUtilitiesBuffers = {};
+		std::vector<VmaAllocation> mUtilitiesBuffersMemory = {};
+		std::vector<void*> mUtilitiesBuffersMapped = {};
 	};
 }
 

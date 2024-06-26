@@ -29,6 +29,8 @@ namespace Cosmos::Vulkan
         pipelineLayoutCI.flags = 0;
         pipelineLayoutCI.setLayoutCount = 1;
         pipelineLayoutCI.pSetLayouts = &mDescriptorSetLayout;
+        pipelineLayoutCI.pushConstantRangeCount = (uint32_t)mSpecification.pushConstants.size();
+        pipelineLayoutCI.pPushConstantRanges = mSpecification.pushConstants.data();
         COSMOS_ASSERT(vkCreatePipelineLayout(mDevice->GetLogicalDevice(), &pipelineLayoutCI, nullptr, &mPipelineLayout) == VK_SUCCESS, "Failed to create pipeline layout");
 
         // shader stages
@@ -173,6 +175,7 @@ namespace Cosmos::Vulkan
             case Vertex::Component::JOINT: return VkVertexInputAttributeDescription({ location, binding, VK_FORMAT_R32G32B32A32_UINT, offsetof(Vertex, joint) });
             case Vertex::Component::WEIGHT: return VkVertexInputAttributeDescription({ location, binding, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(Vertex, weight) });
             case Vertex::Component::COLOR: return VkVertexInputAttributeDescription({ location, binding, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(Vertex, color) });
+            case Vertex::Component::UID: return VkVertexInputAttributeDescription({ location, binding, VK_FORMAT_R32_UINT, offsetof(Vertex, uid) });
         }
         
         return VkVertexInputAttributeDescription({});
@@ -186,8 +189,18 @@ namespace Cosmos::Vulkan
 
         for (auto component : components)
         {
+            switch (component)
+            {
+                case Vertex::Component::POSITION: location = 0; break;
+                case Vertex::Component::NORMAL: location = 1; break;
+                case Vertex::Component::UV: location = 2; break;
+                case Vertex::Component::JOINT: location = 3; break;
+                case Vertex::Component::WEIGHT: location = 4; break;
+                case Vertex::Component::COLOR: location = 5; break;
+                case Vertex::Component::UID: location = 6; break;
+            }
+
             result.push_back(GetInputAttributeDescription(binding, location, component));
-            location++;
         }
 
         return result;
@@ -221,6 +234,7 @@ namespace Cosmos::Vulkan
 	
         CreateMeshPipeline();
         CreateSkyboxPipeline();
+        CreateSilhouettePipeline();
     }
 
 	PipelineLibrary::~PipelineLibrary()
@@ -232,7 +246,34 @@ namespace Cosmos::Vulkan
     {
         CreateMeshPipeline();
         CreateSkyboxPipeline();
-        CreateBRDFPipeline();
+        CreateSilhouettePipeline();
+    }
+
+    void PipelineLibrary::Insert(const char* nameid, Shared<Pipeline> pipeline)
+    {
+        auto it = mPipelines.find(nameid);
+
+        if (it != mPipelines.end())
+        {
+            COSMOS_LOG(Logger::Error, "A Pipeline with name %s already exists, could not create another", nameid);
+            return;
+        }
+
+        mPipelines[nameid] = pipeline;
+    }
+
+    void PipelineLibrary::Erase(const char* nameid)
+    {
+        auto it = mPipelines.find(nameid);
+
+        if (it != mPipelines.end())
+        {
+            mPipelines.erase(nameid);
+            return;
+        }
+
+        COSMOS_LOG(Logger::Error, "No Pipeline with name %s exists", nameid);
+        return;
     }
 
     void PipelineLibrary::CreateMeshPipeline()
@@ -249,7 +290,7 @@ namespace Cosmos::Vulkan
             Vertex::Component::UV
         };
         
-        meshSpecification.bindings.resize(2);
+        meshSpecification.bindings.resize(3);
         
         // model view projection
         meshSpecification.bindings[0].binding = 0;
@@ -258,12 +299,19 @@ namespace Cosmos::Vulkan
         meshSpecification.bindings[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
         meshSpecification.bindings[0].pImmutableSamplers = nullptr;
 
-        // color map
+        // utilities ubo
         meshSpecification.bindings[1].binding = 1;
-        meshSpecification.bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        meshSpecification.bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         meshSpecification.bindings[1].descriptorCount = 1;
         meshSpecification.bindings[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
         meshSpecification.bindings[1].pImmutableSamplers = nullptr;
+
+        // color map
+        meshSpecification.bindings[2].binding = 2;
+        meshSpecification.bindings[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        meshSpecification.bindings[2].descriptorCount = 1;
+        meshSpecification.bindings[2].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+        meshSpecification.bindings[2].pImmutableSamplers = nullptr;
         
         // common
         {
@@ -290,6 +338,58 @@ namespace Cosmos::Vulkan
             // build the pipeline
             mPipelines["Mesh.Wireframed"]->Build(mCache);
         }
+    }
+
+    void PipelineLibrary::CreateSilhouettePipeline()
+    {
+        Pipeline::Specification specs = {};
+        specs.renderPass = mRenderpassManager->GetMainRenderpass();
+        specs.vertexShader = CreateShared<Shader>(mDevice, Shader::Type::Vertex, "Silhouette.vert", GetAssetSubDir("Shader/silhouette.vert"));
+        specs.fragmentShader = CreateShared<Shader>(mDevice, Shader::Type::Fragment, "Silhouette.frag", GetAssetSubDir("Shader/silhouette.frag"));
+        specs.vertexComponents = 
+        { 
+            Vertex::Component::POSITION,
+            Vertex::Component::COLOR,
+            Vertex::Component::NORMAL,
+            Vertex::Component::UV
+        };
+
+        specs.bindings.resize(3);
+
+        // model view projection
+        specs.bindings[0].binding = 0;
+        specs.bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        specs.bindings[0].descriptorCount = 1;
+        specs.bindings[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+        specs.bindings[0].pImmutableSamplers = nullptr;
+
+        // utilities ubo
+        specs.bindings[1].binding = 1;
+        specs.bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        specs.bindings[1].descriptorCount = 1;
+        specs.bindings[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+        specs.bindings[1].pImmutableSamplers = nullptr;
+
+        // color map
+        specs.bindings[2].binding = 2;
+        specs.bindings[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        specs.bindings[2].descriptorCount = 1;
+        specs.bindings[2].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+        specs.bindings[2].pImmutableSamplers = nullptr;
+
+        // create
+        mPipelines["Silhouette"] = CreateShared<Pipeline>(mDevice, specs);
+
+        // modify parameters after initial creation
+        mPipelines["Silhouette"]->GetSpecificationRef().DSSCI.back.compareOp = VK_COMPARE_OP_NOT_EQUAL;
+        mPipelines["Silhouette"]->GetSpecificationRef().DSSCI.back.failOp = VK_STENCIL_OP_KEEP;
+        mPipelines["Silhouette"]->GetSpecificationRef().DSSCI.back.depthFailOp = VK_STENCIL_OP_KEEP;
+        mPipelines["Silhouette"]->GetSpecificationRef().DSSCI.back.passOp = VK_STENCIL_OP_KEEP;
+        mPipelines["Silhouette"]->GetSpecificationRef().DSSCI.front = mPipelines["Silhouette"]->GetSpecificationRef().DSSCI.back;
+        mPipelines["Silhouette"]->GetSpecificationRef().DSSCI.depthTestEnable = VK_FALSE;
+
+        // build the pipeline
+        mPipelines["Silhouette"]->Build(mCache);
     }
 
     void PipelineLibrary::CreateSkyboxPipeline()

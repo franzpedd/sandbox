@@ -21,14 +21,12 @@ namespace Cosmos
 		vkDestroySampler(device->GetLogicalDevice(), mSampler, nullptr);
 		
 		vkDestroyImageView(device->GetLogicalDevice(), mDepthView, nullptr);
-		vmaFreeMemory(device->GetAllocator(), mDepthMemory);
-		vkDestroyImage(device->GetLogicalDevice(), mDepthImage, nullptr);
+		vmaDestroyImage(device->GetAllocator(), mDepthImage, mDepthMemory);
 		
 		for (size_t i = 0; i < swapchain->GetImagesRef().size(); i++)
 		{
 			vkDestroyImageView(device->GetLogicalDevice(), mImageViews[i], nullptr);
-			vmaFreeMemory(device->GetAllocator(), mImageMemories[i]);
-			vkDestroyImage(device->GetLogicalDevice(), mImages[i], nullptr);
+			vmaDestroyImage(device->GetAllocator(), mImages[i], mImageMemories[i]);
 		}
 	}
 
@@ -89,6 +87,24 @@ namespace Cosmos
 			}
 		}
 
+		if (event->GetType() == Event::Type::MousePress)
+		{
+			ImVec2 cursorClickPosition = ImGui::GetMousePos();
+			bool insideViewport = cursorClickPosition.x <= mContentRegionMax.x
+				&& cursorClickPosition.y <= mContentRegionMax.y
+				&& cursorClickPosition.x >= mContentRegionMin.x
+				&& cursorClickPosition.y >= mContentRegionMin.y;
+
+			if (insideViewport)
+			{
+				Shared<Vulkan::VKRenderer> vkRenderer = std::dynamic_pointer_cast<Vulkan::VKRenderer>(mRenderer);
+				auto& renderpass = vkRenderer->GetRenderpassManager()->GetRenderpassesRef()["MousePicking"];
+
+				auto castedEvent = std::dynamic_pointer_cast<MousePressEvent>(event);
+				COSMOS_LOG(Logger::Trace, "Info about mouse press: Button: %d, Pos:%f-%f", castedEvent->GetButtoncode(), ImGui::GetMousePos().x, ImGui::GetMousePos().y);
+			}
+		}
+
 		if (event->GetType() == Event::Type::WindowResize)
 		{
 			auto& device = std::dynamic_pointer_cast<Vulkan::VKRenderer>(mRenderer)->GetDevice();
@@ -96,14 +112,12 @@ namespace Cosmos
 			auto& renderpass = std::dynamic_pointer_cast<Vulkan::VKRenderer>(mRenderer)->GetRenderpassManager()->GetRenderpassesRef()["Viewport"]->GetSpecificationRef();
 
 			vkDestroyImageView(device->GetLogicalDevice(), mDepthView, nullptr);
-			vmaFreeMemory(device->GetAllocator(), mDepthMemory);
-			vkDestroyImage(device->GetLogicalDevice(), mDepthImage, nullptr);
+			vmaDestroyImage(device->GetAllocator(), mDepthImage, mDepthMemory);
 
 			for (size_t i = 0; i < swapchain->GetImagesRef().size(); i++)
 			{
 				vkDestroyImageView(device->GetLogicalDevice(), mImageViews[i], nullptr);
-				vmaFreeMemory(device->GetAllocator(), mImageMemories[i]);
-				vkDestroyImage(device->GetLogicalDevice(), mImages[i], nullptr);
+				vmaDestroyImage(device->GetAllocator(), mImages[i], mImageMemories[i]);
 			}
 
 			for (auto& framebuffer : renderpass.frameBuffers)
@@ -237,19 +251,19 @@ namespace Cosmos
 
 			dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
 			dependencies[0].dstSubpass = 0;
-			dependencies[0].srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-			dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-			dependencies[0].srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-			dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-			dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+			dependencies[0].srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+			dependencies[0].dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+			dependencies[0].srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+			dependencies[0].dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+			dependencies[0].dependencyFlags = 0;
 
-			dependencies[1].srcSubpass = 0;
-			dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
+			dependencies[1].srcSubpass = VK_SUBPASS_EXTERNAL;
+			dependencies[1].dstSubpass = 0;
 			dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-			dependencies[1].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-			dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-			dependencies[1].dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-			dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+			dependencies[1].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+			dependencies[1].srcAccessMask = 0;
+			dependencies[1].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+			dependencies[1].dependencyFlags = 0;
 
 			VkRenderPassCreateInfo renderPassCI = {};
 			renderPassCI.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;

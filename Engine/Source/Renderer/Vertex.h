@@ -13,7 +13,8 @@ namespace Cosmos
             UV,
             JOINT,
             WEIGHT,
-            COLOR
+            COLOR,
+            UID,
         };
 
         glm::vec3 position;
@@ -22,6 +23,7 @@ namespace Cosmos
         glm::uvec4 joint;
         glm::vec4 weight;
         glm::vec4 color;
+        uint32_t uid;
 
         // checks if current vertex is the same as another
         inline bool operator==(const Vertex& other) const
@@ -31,7 +33,8 @@ namespace Cosmos
                 && uv == other.uv
                 && joint == other.joint
                 && weight == other.weight
-                && color == other.color;
+                && color == other.color
+                && uid == other.uid;
         }
     };
 }

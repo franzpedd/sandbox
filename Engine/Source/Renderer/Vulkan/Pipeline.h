@@ -28,6 +28,7 @@ namespace Cosmos::Vulkan
             std::vector<Vertex::Component> vertexComponents = {};       // components the vertex have
             bool notPassingVertexData = false;                          // enable this when not passing vertex data to the shader
             std::vector<VkDescriptorSetLayoutBinding> bindings = {};    // binding data (buffer, textures, etc)
+            std::vector<VkPushConstantRange> pushConstants = {};        // optioanlly push constant when creating pipeline
 
             // these will be auto generated, but can be previously modified between Pipeline constructor and Build for customization
             std::vector<VkDynamicState> dynamicStates{ VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
@@ -114,10 +115,21 @@ namespace Cosmos::Vulkan
         // recreate all pipelines, used when renderpass get's modified
         void RecreatePipelines();
 
+    public:
+
+        // inserts a new pipeline into the library
+        void Insert(const char* nameid, Shared<Pipeline> pipeline);
+
+        // erases a pipeline from the library
+        void Erase(const char* nameid);
+
     private:
 
         // create globally-used pipeline for meshes
         void CreateMeshPipeline();
+
+        // create globally-used pipeline for silhouettes
+        void CreateSilhouettePipeline();
 
         // create globally-used pipeline for skybox
         void CreateSkyboxPipeline();

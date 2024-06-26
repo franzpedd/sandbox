@@ -50,6 +50,11 @@ namespace Cosmos
 		// loads the model from a filepath
 		virtual void LoadFromFile(std::string filepath, float scale = 1.0f) = 0;
 
+	public:
+
+		// sets the mesh as mouse-picked or not
+		virtual void SetPicked(bool value) = 0;
+
 	public: // materials
 
 		// modifies the mesh material's colormap

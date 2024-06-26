@@ -9,16 +9,16 @@ layout(binding = 0) uniform MVP_UBO
     vec3 cameraPos;
 } ubo;
 
-layout (location = 0) in vec3 in_position;
+layout(location = 0) in vec3 inPosition;
 
 layout (location = 0) out vec3 out_uvw;
 
 void main() 
 {
     // calculate the fixed correct position
-	vec3 position = mat3(ubo.model * ubo.view) * in_position;
+	  vec3 position = mat3(ubo.model * ubo.view) * inPosition;
   	gl_Position = (ubo.proj * vec4( position, 0.0 )).xyzz;
 
     // pass world coordinate to fragment shader
-  	out_uvw = in_position;
+  	out_uvw = inPosition;
 }

@@ -56,7 +56,7 @@ namespace Cosmos
 		ImVec2 mContentRegionMin;
 		ImVec2 mContentRegionMax;
 
-		// vulkan resources
+		// vulkan viewport resources
 		VkFormat mSurfaceFormat = VK_FORMAT_UNDEFINED;
 		VkFormat mDepthFormat = VK_FORMAT_UNDEFINED;
 		VkSampler mSampler = VK_NULL_HANDLE;

@@ -43,6 +43,11 @@ namespace Cosmos
 
 	public:
 
+		// renders the objects with the object-picking
+		void RenderPickableObjects();
+
+	public:
+
 		// creates and returns an empty entity
 		Shared<Entity> CreateEntity(std::string name);
 
