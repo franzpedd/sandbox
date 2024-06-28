@@ -15,6 +15,10 @@
 #include "Platform/Input.h"
 #include "Platform/Window.h"
 
+// physics
+#include "Physics/BoundingBox.h"
+#include "Physics/Collision.h"
+
 // renderer
 #include "Renderer/Buffer.h"
 #include "Renderer/Renderer.h"

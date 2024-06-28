@@ -57,7 +57,8 @@ namespace Cosmos
 		if (entity == nullptr) return;
 
 		// create unique context
-		ImGui::PushID((void*)(uint64_t)entity->GetID());
+		
+		ImGui::PushID((void*)(uint64_t)entity->GetComponent<IDComponent>().id);
 
 		bool selected = (mSelectedEntity == entity) ? true : false;
 
@@ -151,7 +152,7 @@ namespace Cosmos
 		// general info
 		ImGui::Separator();
 		
-		ImGui::Text("ID: %d", entity->GetID().GetValue());
+		ImGui::Text("ID: %d", entity->GetComponent<IDComponent>().id);
 
 		ImGui::Text("Name: ");
 		ImGui::SameLine();

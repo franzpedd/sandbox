@@ -69,6 +69,9 @@ namespace Cosmos
 		// returns if a mouse button is pressed
 		bool IsButtonPressed(Buttoncode button);
 
+		// returns the mouse position
+		static void GetMousePosition(int* x, int* y);
+
 	public: // window 
 
 		// returns the framebuffer size

@@ -234,7 +234,6 @@ namespace Cosmos::Vulkan
 	
         CreateMeshPipeline();
         CreateSkyboxPipeline();
-        CreateSilhouettePipeline();
     }
 
 	PipelineLibrary::~PipelineLibrary()
@@ -246,7 +245,6 @@ namespace Cosmos::Vulkan
     {
         CreateMeshPipeline();
         CreateSkyboxPipeline();
-        CreateSilhouettePipeline();
     }
 
     void PipelineLibrary::Insert(const char* nameid, Shared<Pipeline> pipeline)
@@ -283,9 +281,8 @@ namespace Cosmos::Vulkan
         meshSpecification.vertexShader = CreateShared<Shader>(mDevice, Shader::Type::Vertex, "Mesh.vert", GetAssetSubDir("Shader/mesh.vert"));
         meshSpecification.fragmentShader = CreateShared<Shader>(mDevice, Shader::Type::Fragment, "Mesh.frag", GetAssetSubDir("Shader/mesh.frag"));
         meshSpecification.vertexComponents = 
-        { 
+        {
             Vertex::Component::POSITION,
-            Vertex::Component::COLOR,
             Vertex::Component::NORMAL,
             Vertex::Component::UV
         };
@@ -340,58 +337,6 @@ namespace Cosmos::Vulkan
         }
     }
 
-    void PipelineLibrary::CreateSilhouettePipeline()
-    {
-        Pipeline::Specification specs = {};
-        specs.renderPass = mRenderpassManager->GetMainRenderpass();
-        specs.vertexShader = CreateShared<Shader>(mDevice, Shader::Type::Vertex, "Silhouette.vert", GetAssetSubDir("Shader/silhouette.vert"));
-        specs.fragmentShader = CreateShared<Shader>(mDevice, Shader::Type::Fragment, "Silhouette.frag", GetAssetSubDir("Shader/silhouette.frag"));
-        specs.vertexComponents = 
-        { 
-            Vertex::Component::POSITION,
-            Vertex::Component::COLOR,
-            Vertex::Component::NORMAL,
-            Vertex::Component::UV
-        };
-
-        specs.bindings.resize(3);
-
-        // model view projection
-        specs.bindings[0].binding = 0;
-        specs.bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        specs.bindings[0].descriptorCount = 1;
-        specs.bindings[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-        specs.bindings[0].pImmutableSamplers = nullptr;
-
-        // utilities ubo
-        specs.bindings[1].binding = 1;
-        specs.bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        specs.bindings[1].descriptorCount = 1;
-        specs.bindings[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-        specs.bindings[1].pImmutableSamplers = nullptr;
-
-        // color map
-        specs.bindings[2].binding = 2;
-        specs.bindings[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        specs.bindings[2].descriptorCount = 1;
-        specs.bindings[2].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-        specs.bindings[2].pImmutableSamplers = nullptr;
-
-        // create
-        mPipelines["Silhouette"] = CreateShared<Pipeline>(mDevice, specs);
-
-        // modify parameters after initial creation
-        mPipelines["Silhouette"]->GetSpecificationRef().DSSCI.back.compareOp = VK_COMPARE_OP_NOT_EQUAL;
-        mPipelines["Silhouette"]->GetSpecificationRef().DSSCI.back.failOp = VK_STENCIL_OP_KEEP;
-        mPipelines["Silhouette"]->GetSpecificationRef().DSSCI.back.depthFailOp = VK_STENCIL_OP_KEEP;
-        mPipelines["Silhouette"]->GetSpecificationRef().DSSCI.back.passOp = VK_STENCIL_OP_KEEP;
-        mPipelines["Silhouette"]->GetSpecificationRef().DSSCI.front = mPipelines["Silhouette"]->GetSpecificationRef().DSSCI.back;
-        mPipelines["Silhouette"]->GetSpecificationRef().DSSCI.depthTestEnable = VK_FALSE;
-
-        // build the pipeline
-        mPipelines["Silhouette"]->Build(mCache);
-    }
-
     void PipelineLibrary::CreateSkyboxPipeline()
     {
         Pipeline::Specification skyboxSpecification = {};
@@ -424,23 +369,6 @@ namespace Cosmos::Vulkan
 
         // build the pipeline
         mPipelines["Skybox"]->Build(mCache);
-    }
-
-    void PipelineLibrary::CreateBRDFPipeline()
-    {
-        COSMOS_LOG(Logger::Todo, "Re-arrenge how render pass are created and enforce only MSAA and RenderPass no pipeline creation");
-        //Pipeline::Specification BRDFPipeline = {};
-        //BRDFPipeline.renderPass = mRenderpassManager->GetMainRenderpass();
-        //BRDFPipeline.vertexShader = CreateShared<Shader>(mDevice, Shader::Type::Vertex, "BRDF.vert", GetAssetSubDir("Shader/brdf.vert"));
-        //BRDFPipeline.fragmentShader = CreateShared<Shader>(mDevice, Shader::Type::Fragment, "BRDF.frag", GetAssetSubDir("Shader/brdf.frag"));
-        //BRDFPipeline.vertexComponents = { };
-        //BRDFPipeline.bindings.resize(0);
-        //
-        //// create
-        //mPipelines["BRDF"] = CreateShared<Pipeline>(mDevice, BRDFPipeline);
-        //
-        //// build the pipeline
-        //mPipelines["BRDF"]->Build(mCache);
     }
 }
 

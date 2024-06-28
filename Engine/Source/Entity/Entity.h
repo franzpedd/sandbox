@@ -12,16 +12,13 @@ namespace Cosmos
 	public:
 
 		// constructor
-		Entity(Shared<Scene> scene, entt::entity handle, UUID id) : mScene(scene), mHandle(handle), mID(id) {}
+		Entity(Shared<Scene> scene, entt::entity handle) : mScene(scene), mHandle(handle) {}
 
 		// destructor
 		~Entity() = default;
 
 		// returns the entity handle
 		inline entt::entity GetHandle() const { return mHandle; }
-
-		// returns the entity id
-		inline UUID GetID() const { return mID; }
 
 	public:
 
@@ -62,6 +59,5 @@ namespace Cosmos
 
 		Shared<Scene> mScene;
 		entt::entity mHandle;
-		UUID mID;
 	};
 }

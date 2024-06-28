@@ -155,7 +155,7 @@ class Dependencies:
 
     ## openal spatialized audio, 3D-Audio library
     #@classmethod
-    #def DownloadOpenAL(itslef, version) :
+    #def DownloadOpenAL(itself, version) :
     #
     #    Util.Clone("https://github.com/kcat/openal-soft", "openal", version);
     #
@@ -179,6 +179,7 @@ class Dependencies:
     #        subprocess.call(f"cmake -S . -B build/Release -DCMAKE_BUILD_TYPE=RELEASE", shell = True);
     #        subprocess.call(f"cmake --build build/Release --config Release", shell = True);
     #        os.chdir(scriptdir);
+
 
 # main
 Dependencies.DownloadVulkan("1.3.236.0");

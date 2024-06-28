@@ -68,18 +68,6 @@ namespace Cosmos::Vulkan
 		Shared<RenderpassManager> mRenderpassManager;
 		Shared<Swapchain> mSwapchain;
 		Shared<PipelineLibrary> mPipelineLibrary;
-
-	private: // pbr
-
-		// generate a BRDF integration map storing roughness/NdotV as a look-up-table
-		void CreateBRDFLookUpTable();
-
-	private:
-
-		VkImage mBRDFImage;
-		VmaAllocation mBRDFMemory;
-		VkImageView mBRDFImageView;
-		VkSampler mBRDFSampler;
 	};
 }
 

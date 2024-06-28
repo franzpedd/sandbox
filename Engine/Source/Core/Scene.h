@@ -36,15 +36,10 @@ namespace Cosmos
 		void OnUpdate(float timestep);
 
 		// draw scene objects
-		void OnRender();
+		void OnRender(void* commandBuffer);
 
 		// handle events
 		void OnEvent(Shared<Event> event);
-
-	public:
-
-		// renders the objects with the object-picking
-		void RenderPickableObjects();
 
 	public:
 

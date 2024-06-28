@@ -2,14 +2,16 @@
 
 #include "SceneHierarchy.h"
 #include <array>
+#include <fstream>
 
 namespace Cosmos
 {
-	Viewport::Viewport(Shared<Window> window, Shared<Renderer> renderer, Shared<UI> ui, SceneHierarchy* sceneHierarchy)
-		: Widget("Viewport"), mWindow(window), mRenderer(renderer), mUI(ui), mSceneHierarchy(sceneHierarchy)
+	Viewport::Viewport(Shared<Window> window, Shared<Renderer> renderer, Shared<UI> ui, Shared<Scene> scene, SceneHierarchy* sceneHierarchy)
+		: Widget("Viewport"), mWindow(window), mRenderer(renderer), mUI(ui), mScene(scene), mSceneHierarchy(sceneHierarchy)
 	{
 		mSceneGizmos = CreateShared<SceneGizmos>(mRenderer->GetCamera());
 		CreateRendererResources();
+		CreatePickingResources();
 	}
 
 	Viewport::~Viewport()
@@ -28,14 +30,21 @@ namespace Cosmos
 			vkDestroyImageView(device->GetLogicalDevice(), mImageViews[i], nullptr);
 			vmaDestroyImage(device->GetAllocator(), mImages[i], mImageMemories[i]);
 		}
+
+		// picking
+		vkDestroyImageView(device->GetLogicalDevice(), mPickingColorView, nullptr);
+		vkDestroyImageView(device->GetLogicalDevice(), mPickingDepthView, nullptr);
+		vmaDestroyImage(device->GetAllocator(), mPickingColorImage, mPickingColorMemory);
+		vmaDestroyImage(device->GetAllocator(), mPickingDepthImage, mPickingDepthMemory);
 	}
 
 	void Viewport::OnUpdate()
 	{
+		
 		if (ImGui::Begin("Viewport"))
 		{
 			ImGui::Image(mDescriptorSets[mRenderer->GetCurrentFrame()], ImGui::GetContentRegionAvail());
-
+			
 			// updating aspect ratio for the docking
 			mCurrentSize = ImGui::GetWindowSize();
 			mRenderer->GetCamera()->SetAspectRatio((float)(mCurrentSize.x / mCurrentSize.y));
@@ -97,11 +106,42 @@ namespace Cosmos
 
 			if (insideViewport)
 			{
-				Shared<Vulkan::VKRenderer> vkRenderer = std::dynamic_pointer_cast<Vulkan::VKRenderer>(mRenderer);
-				auto& renderpass = vkRenderer->GetRenderpassManager()->GetRenderpassesRef()["MousePicking"];
 
-				auto castedEvent = std::dynamic_pointer_cast<MousePressEvent>(event);
-				COSMOS_LOG(Logger::Trace, "Info about mouse press: Button: %d, Pos:%f-%f", castedEvent->GetButtoncode(), ImGui::GetMousePos().x, ImGui::GetMousePos().y);
+				//// enables picking
+				mRenderer->SetPicking(true);
+
+
+
+				// this works, but i cant' read the ubo's
+				//TakeScreenshot(cursorClickPosition);
+				
+				//// this was a bust
+				//auto extent = std::dynamic_pointer_cast<Vulkan::VKRenderer>(mRenderer)->GetSwapchain()->GetExtent();
+				//auto camera = mRenderer->GetCamera();
+				//glm::vec3 origin = camera->GetFrontRef();
+				//glm::vec3 direction = glm::vec3(0.0f);
+				//
+				//ScreenPosToWorldRay((int)cursorClickPosition.x, (int)cursorClickPosition.y, (int)mCurrentSize.x, (int)mCurrentSize.y,
+				//	camera->GetViewRef(), camera->GetProjectionRef(), origin, direction);
+				//
+				//auto meshView = mScene->GetRegistryRef().view<TransformComponent, MeshComponent>();
+				//
+				//for (auto ent : meshView)
+				//{
+				//	auto [transformComponent, meshComponent] = meshView.get<TransformComponent, MeshComponent>(ent);
+				//
+				//	if (meshComponent.mesh == nullptr || !meshComponent.mesh->IsLoaded())
+				//		continue;
+				//	
+				//	float intersection_distance;
+				//	glm::vec3 aabb_min(-1.0f, -1.0f, -1.0f);
+				//	glm::vec3 aabb_max(1.0f, 1.0f, 1.0f);
+				//
+				//	if (TestRayOBBIntersection(origin, direction, aabb_min, aabb_max, transformComponent.GetTransform(), intersection_distance))
+				//	{
+				//		COSMOS_LOG(Logger::Trace, "Hit");
+				//	}
+				//}
 			}
 		}
 
@@ -379,7 +419,7 @@ namespace Cosmos
 					renderpass.msaa,
 					mSurfaceFormat,
 					VK_IMAGE_TILING_OPTIMAL,
-					VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+					VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, // for picking
 					VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 					mImages[i],
 					mImageMemories[i]
@@ -418,6 +458,301 @@ namespace Cosmos
 				COSMOS_ASSERT(vkCreateFramebuffer(vkRenderer->GetDevice()->GetLogicalDevice(), &framebufferCI, nullptr, &renderpass.frameBuffers[i]) == VK_SUCCESS, "Failed to create framebuffer");
 			}
 		}
+	}
+
+	void Viewport::CreatePickingResources()
+	{
+		auto vkRenderer = std::dynamic_pointer_cast<Vulkan::VKRenderer>(mRenderer);
+		vkRenderer->GetRenderpassManager()->Insert("Picking", VK_SAMPLE_COUNT_1_BIT);
+		auto& renderpassCfg = vkRenderer->GetRenderpassManager()->GetRenderpassesRef()["Picking"]->GetSpecificationRef();
+
+		// images
+		{
+			vkRenderer->GetDevice()->CreateImage
+			(
+				vkRenderer->GetSwapchain()->GetExtent().width,
+				vkRenderer->GetSwapchain()->GetExtent().width,
+				1, 1, renderpassCfg.msaa, VK_FORMAT_R32_SFLOAT, VK_IMAGE_TILING_OPTIMAL,
+				VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+				mPickingColorImage, mPickingColorMemory
+			);
+
+			vkRenderer->GetDevice()->CreateImage
+			(
+				vkRenderer->GetSwapchain()->GetExtent().width,
+				vkRenderer->GetSwapchain()->GetExtent().width,
+				1, 1, renderpassCfg.msaa, mDepthFormat, VK_IMAGE_TILING_OPTIMAL,
+				VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+				mPickingDepthImage, mPickingDepthMemory
+			);
+
+			mPickingColorView = vkRenderer->GetDevice()->CreateImageView(mPickingColorImage, VK_FORMAT_R32_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT);
+			mPickingDepthView = vkRenderer->GetDevice()->CreateImageView(mPickingDepthImage, mDepthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+		}
+		
+		// render pass
+		{
+			VkAttachmentDescription colorAttachment = {};
+			colorAttachment.format = VK_FORMAT_R32_SFLOAT;
+			colorAttachment.samples = renderpassCfg.msaa;
+			colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+			colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+			colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+			colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+			colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+			colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+			VkAttachmentDescription depthAttachment = {};
+			depthAttachment.format = mDepthFormat;
+			depthAttachment.samples = renderpassCfg.msaa;
+			depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+			depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+			depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+			depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+			depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+			depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+			VkAttachmentReference colorRef = {};
+			colorRef.attachment = 0;
+			colorRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+			VkAttachmentReference depthRef = {};
+			depthRef.attachment = 1;
+			depthRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+			VkSubpassDescription subpassDesc = {};
+			subpassDesc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+			subpassDesc.colorAttachmentCount = 1;
+			subpassDesc.pColorAttachments = &colorRef;
+			subpassDesc.pDepthStencilAttachment = &depthRef;
+
+			VkSubpassDependency dependency = {};
+			dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+			dependency.dstSubpass = 0;
+			dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+			dependency.srcAccessMask = 0;
+			dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+			dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+			std::array<VkAttachmentDescription, 2 > attachmentsDesc = { colorAttachment, depthAttachment };
+			VkRenderPassCreateInfo renderpassCI = {};
+			renderpassCI.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+			renderpassCI.attachmentCount = static_cast<uint32_t>(attachmentsDesc.size());
+			renderpassCI.pAttachments = attachmentsDesc.data();
+			renderpassCI.subpassCount = 1;
+			renderpassCI.pSubpasses = &subpassDesc;
+			renderpassCI.dependencyCount = 1;
+			renderpassCI.pDependencies = &dependency;
+			COSMOS_ASSERT(vkCreateRenderPass(vkRenderer->GetDevice()->GetLogicalDevice(), &renderpassCI, nullptr, &renderpassCfg.renderPass) == VK_SUCCESS, "Failed to create renderpass for mouse picking");
+		}
+
+		// command pool
+		{
+			Vulkan::Device::QueueFamilyIndices indices = vkRenderer->GetDevice()->FindQueueFamilies(vkRenderer->GetDevice()->GetPhysicalDevice(), vkRenderer->GetDevice()->GetSurface());
+
+			VkCommandPoolCreateInfo cmdPoolInfo = {};
+			cmdPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+			cmdPoolInfo.queueFamilyIndex = indices.graphics.value();
+			cmdPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+			COSMOS_ASSERT(vkCreateCommandPool(vkRenderer->GetDevice()->GetLogicalDevice(), &cmdPoolInfo, nullptr, &renderpassCfg.commandPool) == VK_SUCCESS, "Failed to create command pool");
+		}
+
+		// command buffers
+		{
+			renderpassCfg.commandBuffers.resize(mRenderer->GetConcurrentlyRenderedFramesCount());
+
+			VkCommandBufferAllocateInfo cmdBufferAllocInfo = {};
+			cmdBufferAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+			cmdBufferAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+			cmdBufferAllocInfo.commandPool = renderpassCfg.commandPool;
+			cmdBufferAllocInfo.commandBufferCount = (uint32_t)renderpassCfg.commandBuffers.size();
+			COSMOS_ASSERT(vkAllocateCommandBuffers(vkRenderer->GetDevice()->GetLogicalDevice(), &cmdBufferAllocInfo, renderpassCfg.commandBuffers.data()) == VK_SUCCESS, "Failed to allocate command buffers");
+		}
+
+		// frame buffer
+		{
+			renderpassCfg.frameBuffers.resize(1);
+			std::array<VkImageView, 2> attachments = { mPickingColorView, mPickingDepthView };
+			VkFramebufferCreateInfo framebufferCI = {};
+			framebufferCI.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+			framebufferCI.renderPass = renderpassCfg.renderPass;
+			framebufferCI.pAttachments = attachments.data();
+			framebufferCI.attachmentCount = static_cast<uint32_t>(attachments.size());
+			framebufferCI.width = vkRenderer->GetSwapchain()->GetExtent().width;
+			framebufferCI.height = vkRenderer->GetSwapchain()->GetExtent().width;
+			framebufferCI.layers = 1;
+			COSMOS_ASSERT(vkCreateFramebuffer(vkRenderer->GetDevice()->GetLogicalDevice(), &framebufferCI, nullptr, &renderpassCfg.frameBuffers[0]) == VK_SUCCESS, "Failed to create framebuffer for mouse picking");
+		}
+
+		// pipeline
+		{
+			Vulkan::Pipeline::Specification specs = {};
+			specs.renderPass = vkRenderer->GetRenderpassManager()->GetRenderpassesRef()["Picking"];
+			specs.vertexShader = CreateShared<Vulkan::Shader>(vkRenderer->GetDevice(), Vulkan::Shader::Type::Vertex, "Picking.vert", GetAssetSubDir("Shader/picking.vert"));
+			specs.fragmentShader = CreateShared<Vulkan::Shader>(vkRenderer->GetDevice(), Vulkan::Shader::Type::Fragment, "Picking.frag", GetAssetSubDir("Shader/picking.frag"));
+			specs.vertexComponents = { Vertex::Component::POSITION, Vertex::Component::UID };
+		
+			specs.bindings.resize(2);
+		
+			// model view projection
+			specs.bindings[0].binding = 0;
+			specs.bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			specs.bindings[0].descriptorCount = 1;
+			specs.bindings[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+			specs.bindings[0].pImmutableSamplers = nullptr;
+		
+			// utils buffer
+			specs.bindings[1].binding = 1;
+			specs.bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+			specs.bindings[1].descriptorCount = 1;
+			specs.bindings[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+			specs.bindings[1].pImmutableSamplers = nullptr;
+		
+			// create
+			auto pipeline = CreateShared<Vulkan::Pipeline>(vkRenderer->GetDevice(), specs);
+			vkRenderer->GetPipelineLibrary()->Insert("Picking", pipeline);
+			
+			// modify parameters after initial creation
+			pipeline->GetSpecificationRef().RSCI.cullMode = VK_CULL_MODE_BACK_BIT;
+		
+			// build the pipeline
+			pipeline->Build(vkRenderer->GetPipelineLibrary()->GetPipelineCache());
+		}
+	}
+
+	void Viewport::TakeScreenshot(ImVec2 clickedPosition)
+	{
+		auto vkRenderer = std::dynamic_pointer_cast<Vulkan::VKRenderer>(mRenderer);
+		auto renderpass = vkRenderer->GetRenderpassManager()->GetRenderpassesRef()["Viewport"]->GetSpecificationRef();
+
+		// source for the copy is the last rendered viewport image
+		VkImage srcImage = mImages[mRenderer->GetCurrentFrame()];
+		VkImage dstImage;
+		VmaAllocation dstMemory;
+
+		// create the linear tiled destination image to copy to and to read the memory from
+		vkRenderer->GetDevice()->CreateImage
+		(
+			vkRenderer->GetSwapchain()->GetExtent().width,
+			vkRenderer->GetSwapchain()->GetExtent().height,
+			1, 1, renderpass.msaa, mSurfaceFormat, VK_IMAGE_TILING_LINEAR,
+			VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, 
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			dstImage,
+			dstMemory,
+			0,
+			VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT
+		);
+
+		// do the actual blit from the swapchain image to our host visible destination image
+		VkCommandBuffer copyCmd = vkRenderer->GetDevice()->CreateCommandBuffer(renderpass.commandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+
+		// transition destination image to transfer destination
+		vkRenderer->GetDevice()->InsertImageMemoryBarrier
+		(
+			copyCmd,
+			dstImage,
+			0,
+			VK_ACCESS_TRANSFER_WRITE_BIT,
+			VK_IMAGE_LAYOUT_UNDEFINED,
+			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			VK_PIPELINE_STAGE_TRANSFER_BIT,
+			VK_PIPELINE_STAGE_TRANSFER_BIT,
+			VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }
+		);
+
+		// transition viewport image to transfer source
+		vkRenderer->GetDevice()->InsertImageMemoryBarrier
+		(
+			copyCmd,
+			srcImage,
+			VK_ACCESS_MEMORY_READ_BIT,
+			VK_ACCESS_TRANSFER_READ_BIT,
+			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+			VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+			VK_PIPELINE_STAGE_TRANSFER_BIT,
+			VK_PIPELINE_STAGE_TRANSFER_BIT,
+			VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }
+		);
+
+		VkImageCopy imageCopyRegion = {};
+		imageCopyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		imageCopyRegion.srcSubresource.layerCount = 1;
+		imageCopyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		imageCopyRegion.dstSubresource.layerCount = 1;
+		imageCopyRegion.extent.width = vkRenderer->GetSwapchain()->GetExtent().width;
+		imageCopyRegion.extent.height = vkRenderer->GetSwapchain()->GetExtent().height;
+		imageCopyRegion.extent.depth = 1;
+
+		// issue the copy command
+		vkCmdCopyImage(copyCmd, srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &imageCopyRegion);
+
+		// transition destination image to general layout, which is the required layout for mapping the image memory later on
+		vkRenderer->GetDevice()->InsertImageMemoryBarrier
+		(
+			copyCmd,
+			dstImage,
+			VK_ACCESS_TRANSFER_WRITE_BIT,
+			VK_ACCESS_MEMORY_READ_BIT,
+			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			VK_IMAGE_LAYOUT_GENERAL,
+			VK_PIPELINE_STAGE_TRANSFER_BIT,
+			VK_PIPELINE_STAGE_TRANSFER_BIT,
+			VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }
+		);
+
+		// transition back the viewport image after the blit is done
+		vkRenderer->GetDevice()->InsertImageMemoryBarrier
+		(
+			copyCmd,
+			srcImage,
+			VK_ACCESS_TRANSFER_READ_BIT,
+			VK_ACCESS_MEMORY_READ_BIT,
+			VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+			VK_PIPELINE_STAGE_TRANSFER_BIT,
+			VK_PIPELINE_STAGE_TRANSFER_BIT,
+			VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }
+		);
+
+		vkRenderer->GetDevice()->EndCommandBuffer(renderpass.commandPool, copyCmd, vkRenderer->GetDevice()->GetGraphicsQueue(), true);
+
+		// get layout of the image (including row pitch)
+		VkImageSubresource subResource{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 0 };
+		VkSubresourceLayout subResourceLayout;
+		vkGetImageSubresourceLayout(vkRenderer->GetDevice()->GetLogicalDevice(), dstImage, &subResource, &subResourceLayout);
+
+		// map image memory so we can start copying from it
+		const char* data;
+		vmaMapMemory(vkRenderer->GetDevice()->GetAllocator(), dstMemory, (void**)&data);
+		data += subResourceLayout.offset;
+
+		auto pitch = subResourceLayout.rowPitch;
+		
+		//// copy
+		//Util_Buffer buffer = {};
+		//memcpy(&buffer, data, sizeof(buffer));
+
+		std::ofstream file("ss.ppm", std::ios::out | std::ios::binary);
+
+		// ppm header
+		file << "P6\n" << vkRenderer->GetSwapchain()->GetExtent().width << "\n" << vkRenderer->GetSwapchain()->GetExtent().height << "\n" << 255 << "\n";
+
+		for (uint32_t y = 0; y < vkRenderer->GetSwapchain()->GetExtent().height; y++)
+		{
+			unsigned int* row = (unsigned int*)data;
+			for (uint32_t x = 0; x < vkRenderer->GetSwapchain()->GetExtent().width; x++)
+			{
+				file.write((char*)row, 3);
+				row++;
+			}
+			data += subResourceLayout.rowPitch;
+		}
+		file.close();
+		
+		// destroy resources
+		vmaUnmapMemory(vkRenderer->GetDevice()->GetAllocator(), dstMemory);
+		vmaDestroyImage(vkRenderer->GetDevice()->GetAllocator(), dstImage, dstMemory);
 	}
 
 	SceneGizmos::SceneGizmos(Shared<Camera> camera)

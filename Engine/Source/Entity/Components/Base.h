@@ -1,10 +1,19 @@
 #pragma once
 
 #include "Util/Math.h"
+#include "Util/UUID.h"
 #include <string>
 
 namespace Cosmos
 {
+	struct IDComponent
+	{
+		UUID id;
+
+		// constructor
+		IDComponent() = default;
+	};
+
 	struct NameComponent
 	{
 		std::string name;

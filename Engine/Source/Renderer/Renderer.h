@@ -44,6 +44,14 @@ namespace Cosmos
 
 		// event handling
 		virtual void OnEvent(Shared<Event> event);
+
+	public:
+
+		// gets the mouse picking status
+		virtual bool GetPicking() const { return mPicking; }
+
+		// sets the mouse picking status
+		virtual void SetPicking(bool value) { mPicking = value; }
 		
 	protected:
 
@@ -54,5 +62,6 @@ namespace Cosmos
 		uint32_t mCurrentFrame = 0;
 		uint32_t mImageIndex = 0;
 		const uint32_t mConcurrentlyRenderedFrames = 2;
+		bool mPicking = false;
 	};
 }

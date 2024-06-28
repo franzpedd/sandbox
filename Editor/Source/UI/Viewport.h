@@ -14,7 +14,7 @@ namespace Cosmos
 	public:
 
 		// constructor
-		Viewport(Shared<Window> window, Shared<Renderer> renderer, Shared<UI> ui, SceneHierarchy* sceneHierarchy);
+		Viewport(Shared<Window> window, Shared<Renderer> renderer, Shared<UI> ui, Shared<Scene> scene, SceneHierarchy* sceneHierarchy);
 
 		// destructor
 		virtual ~Viewport();
@@ -41,11 +41,18 @@ namespace Cosmos
 		// creates all framebuffer resources
 		void CreateFramebufferResources();
 
+		// create pixel-perfect resources
+		void CreatePickingResources();
+
+		// takes a screenshot from the scene
+		void TakeScreenshot(ImVec2 clickedPosition);
+
 	private:
 
 		Shared<Window> mWindow;
 		Shared<Renderer> mRenderer;
 		Shared<UI> mUI;
+		Shared<Scene> mScene;
 		SceneHierarchy* mSceneHierarchy;
 
 		// gizmos
@@ -68,8 +75,15 @@ namespace Cosmos
 		std::vector<VkImage> mImages;
 		std::vector<VmaAllocation> mImageMemories;
 		std::vector<VkImageView> mImageViews;
-
 		std::vector<VkDescriptorSet> mDescriptorSets;
+
+		// picking
+		VkImage mPickingColorImage;
+		VkImage mPickingDepthImage;
+		VmaAllocation mPickingColorMemory;
+		VmaAllocation mPickingDepthMemory;
+		VkImageView mPickingColorView;
+		VkImageView mPickingDepthView;
 	};
 
 	class SceneGizmos

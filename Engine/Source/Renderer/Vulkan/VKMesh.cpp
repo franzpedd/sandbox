@@ -7,7 +7,9 @@
 #include "VKMesh.h"
 #include "VKTexture.h"
 #include "VKRenderer.h"
+#include "Swapchain.h"
 #include "Entity/Unique/Camera.h"
+#include "Platform/Window.h"
 #include "Renderer/Buffer.h"
 #include "Util/Files.h"
 #include "Util/Logger.h"
@@ -73,18 +75,24 @@ namespace Cosmos::Vulkan
 
 		memcpy(mUniformBuffersMapped[mRenderer->GetCurrentFrame()], &ubo, sizeof(ubo));
 
-		// update utils
-		Util_Buffer util_buo = {};
-		util_buo.selected = (mPicked == true ? (float)1.0f : (float)0.0f);
+		int x, y;
+		Window::GetMousePosition(&x, &y);
+		auto extent = mRenderer->GetSwapchain()->GetExtent();
 
-		memcpy(mUtilitiesBuffersMapped[mRenderer->GetCurrentFrame()], &util_buo, sizeof(util_buo));
+		// update utils
+		Util_Buffer util_ubo = {};
+		util_ubo.selected = (mPicked == true ? (float)1.0f : (float)0.0f);
+		util_ubo.picking = mRenderer->GetPicking();
+		util_ubo.mousePos = glm::vec2((float)x, (float)y);
+		util_ubo.windowSize = glm::vec2(extent.width, extent.height);
+		memcpy(mUtilitiesBuffersMapped[mRenderer->GetCurrentFrame()], &util_ubo, sizeof(util_ubo));
 	}
 
-	void VKMesh::OnRender()
+	void VKMesh::OnRender(void* commandBuffer)
 	{
 		uint32_t currentFrame = mRenderer->GetCurrentFrame();
 		VkDeviceSize offsets[] = { 0 };
-		VkCommandBuffer cmdBuffer = mRenderer->GetRenderpassManager()->GetMainRenderpass()->GetSpecificationRef().commandBuffers[currentFrame];
+		VkCommandBuffer cmdBuffer = (VkCommandBuffer)commandBuffer; //mRenderer->GetRenderpassManager()->GetMainRenderpass()->GetSpecificationRef().commandBuffers[currentFrame];
 		VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
 		VkPipeline pipeline = VK_NULL_HANDLE;
 
@@ -110,25 +118,6 @@ namespace Cosmos::Vulkan
 		{
 			DrawNode(node, cmdBuffer, pipelineLayout);
 		}
-
-		// draws silhouette
-		//if (mPicked)
-		//{
-		//	pipeline = mRenderer->GetPipelineLibrary()->GetPipelinesRef()["Silhouette"]->GetPipeline();
-		//	pipelineLayout = mRenderer->GetPipelineLibrary()->GetPipelinesRef()["Silhouette"]->GetPipelineLayout();
-		//	
-		//	vkCmdBindVertexBuffers(cmdBuffer, 0, 1, &mVertexBuffer, offsets);
-		//	vkCmdBindIndexBuffer(cmdBuffer, mIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
-		//	vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &mDescriptorSets[mRenderer->GetCurrentFrame()], 0, NULL);
-		//	vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-		//
-		//	// render all nodes at top-level
-		//	for (auto& node : mNodes)
-		//	{
-		//		DrawNode(node, cmdBuffer, mRenderer->GetPipelineLibrary()->GetPipelinesRef()["Silhouette"]->GetPipelineLayout());
-		//	}
-		//}
-
 	}
 
 	void VKMesh::LoadFromFile(std::string filepath, float scale)
@@ -357,7 +346,7 @@ namespace Cosmos::Vulkan
 		if (node->mesh.primitives.size() > 0)
 		{
 			for (Primitive& primitive : node->mesh.primitives)
-			{	
+			{
 				if (primitive.indexCount > 0)
 				{
 					vkCmdDrawIndexed(commandBuffer, primitive.indexCount, 1, primitive.firstIndex, 0, 0);
@@ -483,15 +472,13 @@ namespace Cosmos::Vulkan
 		mMaterial.colormapTex = VKTexture2D::Create(mRenderer, mMaterial.colormapPath.c_str(), true);
 
 		// descriptor pool and descriptor sets
-		std::array<VkDescriptorPoolSize, 2> poolSizes = {};
+		std::array<VkDescriptorPoolSize, 3> poolSizes = {};
 		poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		poolSizes[0].descriptorCount = mRenderer->GetConcurrentlyRenderedFramesCount();
 		poolSizes[1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		poolSizes[1].descriptorCount = mRenderer->GetConcurrentlyRenderedFramesCount();
-
-		constexpr unsigned int imagesCount = 1; // baseColor ////, normal, occlusion, emissive, metallicRoughness
-		poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		poolSizes[1].descriptorCount = mRenderer->GetConcurrentlyRenderedFramesCount() * imagesCount;
+		poolSizes[2].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		poolSizes[2].descriptorCount = mRenderer->GetConcurrentlyRenderedFramesCount();
 
 		VkDescriptorPoolCreateInfo descPoolCI = {};
 		descPoolCI.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -534,53 +521,59 @@ namespace Cosmos::Vulkan
 		{
 			std::vector<VkWriteDescriptorSet> descriptorWrites = {};
 		
-			// camera's ubo
-			VkDescriptorBufferInfo cameraUBOInfo = {};
-			cameraUBOInfo.buffer = mUniformBuffers[i];
-			cameraUBOInfo.offset = 0;
-			cameraUBOInfo.range = sizeof(MVP_Buffer);
-			//
-			VkWriteDescriptorSet cameraUBODesc = {};
-			cameraUBODesc.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			cameraUBODesc.dstSet = mDescriptorSets[i];
-			cameraUBODesc.dstBinding = 0;
-			cameraUBODesc.dstArrayElement = 0;
-			cameraUBODesc.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-			cameraUBODesc.descriptorCount = 1;
-			cameraUBODesc.pBufferInfo = &cameraUBOInfo;
-			descriptorWrites.push_back(cameraUBODesc);
+			// camera ubo
+			{
+				VkDescriptorBufferInfo cameraUBOInfo = {};
+				cameraUBOInfo.buffer = mUniformBuffers[i];
+				cameraUBOInfo.offset = 0;
+				cameraUBOInfo.range = sizeof(MVP_Buffer);
 
-			// utilitie's ubo
-			VkDescriptorBufferInfo utilitiesUBO = {};
-			utilitiesUBO.buffer = mUtilitiesBuffers[i];
-			utilitiesUBO.offset = 0;
-			utilitiesUBO.range = sizeof(Util_Buffer);
-			//
-			VkWriteDescriptorSet utilitiesUBODesc = {};
-			utilitiesUBODesc.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			utilitiesUBODesc.dstSet = mDescriptorSets[i];
-			utilitiesUBODesc.dstBinding = 1;
-			utilitiesUBODesc.dstArrayElement = 0;
-			utilitiesUBODesc.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-			utilitiesUBODesc.descriptorCount = 1;
-			utilitiesUBODesc.pBufferInfo = &utilitiesUBO;
-			descriptorWrites.push_back(utilitiesUBODesc);
+				VkWriteDescriptorSet cameraUBODesc = {};
+				cameraUBODesc.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				cameraUBODesc.dstSet = mDescriptorSets[i];
+				cameraUBODesc.dstBinding = 0;
+				cameraUBODesc.dstArrayElement = 0;
+				cameraUBODesc.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+				cameraUBODesc.descriptorCount = 1;
+				cameraUBODesc.pBufferInfo = &cameraUBOInfo;
+				descriptorWrites.push_back(cameraUBODesc);
+			}
+			
+			// utilities ubo
+			{
+				VkDescriptorBufferInfo utilitiesUBO = {};
+				utilitiesUBO.buffer = mUtilitiesBuffers[i];
+				utilitiesUBO.offset = 0;
+				utilitiesUBO.range = sizeof(Util_Buffer);
 
-			// color map ubo
-			VkDescriptorImageInfo colorMapInfo = {};
-			colorMapInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			colorMapInfo.imageView = (VkImageView)mMaterial.colormapTex->GetView();
-			colorMapInfo.sampler = (VkSampler)mMaterial.colormapTex->GetSampler();
-			//
-			VkWriteDescriptorSet colorMapDec = {};
-			colorMapDec.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			colorMapDec.dstSet = mDescriptorSets[i];
-			colorMapDec.dstBinding = 2;
-			colorMapDec.dstArrayElement = 0;
-			colorMapDec.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			colorMapDec.descriptorCount = 1;
-			colorMapDec.pImageInfo = &colorMapInfo;
-			descriptorWrites.push_back(colorMapDec);
+				VkWriteDescriptorSet utilitiesUBODesc = {};
+				utilitiesUBODesc.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				utilitiesUBODesc.dstSet = mDescriptorSets[i];
+				utilitiesUBODesc.dstBinding = 1;
+				utilitiesUBODesc.dstArrayElement = 0;
+				utilitiesUBODesc.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+				utilitiesUBODesc.descriptorCount = 1;
+				utilitiesUBODesc.pBufferInfo = &utilitiesUBO;
+				descriptorWrites.push_back(utilitiesUBODesc);
+			}
+
+			// color map
+			{
+				VkDescriptorImageInfo colorMapInfo = {};
+				colorMapInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+				colorMapInfo.imageView = (VkImageView)mMaterial.colormapTex->GetView();
+				colorMapInfo.sampler = (VkSampler)mMaterial.colormapTex->GetSampler();
+				
+				VkWriteDescriptorSet colorMapDec = {};
+				colorMapDec.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				colorMapDec.dstSet = mDescriptorSets[i];
+				colorMapDec.dstBinding = 2;
+				colorMapDec.dstArrayElement = 0;
+				colorMapDec.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+				colorMapDec.descriptorCount = 1;
+				colorMapDec.pImageInfo = &colorMapInfo;
+				descriptorWrites.push_back(colorMapDec);
+			}
 
 			vkUpdateDescriptorSets(mRenderer->GetDevice()->GetLogicalDevice(), (uint32_t)descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
 		}

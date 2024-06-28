@@ -9,9 +9,12 @@ layout(set = 0, binding = 0) uniform MVP_UBO
     vec3 cameraPos;
 } ubo;
 
-layout(binding = 1) uniform UTIL_UBO
+layout(set = 0, binding = 1) uniform UTIL_UBO
 {
     float selected;
+    float picking;
+    vec2 mousePos;
+    vec2 windowSize;
 } utils_ubo;
 
 layout(binding = 2) uniform sampler2D colorMapSampler;
@@ -23,14 +26,16 @@ layout(location = 0) out vec4 outColor;
 
 void main()
 {
-   if(utils_ubo.selected == 1.0)
-   {
-       outColor = texture(colorMapSampler, inFragTexCoord);
-       outColor = mix(outColor, vec4(1.0, 0.6, 0.5, 1.0), 0.4);
-   }
+    //object is selected
+    if(utils_ubo.selected == 1.0)
+    {
+        outColor = texture(colorMapSampler, inFragTexCoord);
+        outColor = mix(outColor, vec4(1.0, 0.6, 0.5, 1.0), 0.4);
+    }
 
-   else
-   {
-       outColor = texture(colorMapSampler, inFragTexCoord);
-   }
+    // output
+    else
+    {
+        outColor = texture(colorMapSampler, inFragTexCoord);
+    }
 }

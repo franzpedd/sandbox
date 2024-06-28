@@ -45,7 +45,7 @@ namespace Cosmos
 		virtual void OnUpdate(float timestep, glm::mat4& transform) = 0;
 
 		// draws the mesh
-		virtual void OnRender() = 0;
+		virtual void OnRender(void* commandBuffer) = 0;
 
 		// loads the model from a filepath
 		virtual void LoadFromFile(std::string filepath, float scale = 1.0f) = 0;

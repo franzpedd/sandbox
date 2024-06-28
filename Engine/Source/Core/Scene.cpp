@@ -4,12 +4,14 @@
 #include "Entity/Entity.h"
 #include "Entity/Components/Base.h"
 #include "Entity/Components/Renderable.h"
+#include "Renderer/Renderer.h"
 
 #include "Util/Logger.h"
 
 namespace Cosmos
 {
 	Scene::Scene(Shared<Renderer> renderer)
+		: mRenderer(renderer)
 	{
 	}
 
@@ -20,7 +22,7 @@ namespace Cosmos
 	void Scene::OnUpdate(float timestep)
 	{
 		// update meshes
-		auto meshView = mRegistry.view<TransformComponent, MeshComponent>();
+		auto meshView = mRegistry.view<IDComponent, TransformComponent, MeshComponent>();
 		for (auto ent : meshView)
 		{
 			auto [transformComponent, meshComponent] = meshView.get<TransformComponent, MeshComponent>(ent);
@@ -30,9 +32,11 @@ namespace Cosmos
 
 			meshComponent.mesh->OnUpdate(timestep, transformComponent.GetTransform());
 		}
+
+		//mRenderer->SetPicking(false); // resets mouse picking
 	}
 
-	void Scene::OnRender()
+	void Scene::OnRender(void* commandBuffer)
 	{
 		// draw models
 		auto meshView = mRegistry.view<MeshComponent>();
@@ -43,7 +47,7 @@ namespace Cosmos
 			if (meshComponent == nullptr || !meshComponent->IsLoaded())
 				continue;
 
-			meshComponent->OnRender();
+			meshComponent->OnRender(commandBuffer);
 		}
 	}
 
@@ -53,20 +57,28 @@ namespace Cosmos
 
 	Shared<Entity> Scene::CreateEntity(std::string name)
 	{
-		UUID id = UUID();
 		entt::entity handle = mRegistry.create();
-		Shared<Entity> entity = CreateShared<Entity>(Get(), handle, id);
+		Shared<Entity> entity = CreateShared<Entity>(Get(), handle);
+
+		// add id component into the entity
+		entity->AddComponent<IDComponent>();
 
 		// add name component into the entity
 		entity->AddComponent<NameComponent>();
 		entity->GetComponent<NameComponent>().name = name;
 
-		mEntityMap[id] = entity;
-		return mEntityMap[id];
+		mEntityMap[entity->GetComponent<IDComponent>().id] = entity;
+		return mEntityMap[entity->GetComponent<IDComponent>().id];
 	}
 
 	void Scene::DestroyEntity(Shared<Entity> entity)
 	{
+		UUID id = entity->GetComponent<IDComponent>().id;
+
+		if (entity->HasComponent<IDComponent>()) {
+			entity->RemoveComponent<IDComponent>();
+		}
+
 		if(entity->HasComponent<NameComponent>()) {
 			entity->RemoveComponent<NameComponent>();
 		}
@@ -79,7 +91,7 @@ namespace Cosmos
 			entity->RemoveComponent<MeshComponent>();
 		}
 
-		mEntityMap.erase(entity->GetID());
+		mEntityMap.erase(id);
 	}
 
 	Shared<Entity> Scene::FindEntityById(UUID id)

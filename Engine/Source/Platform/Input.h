@@ -140,7 +140,7 @@ namespace Cosmos
         KEY_F22,
         KEY_F23,
         KEY_F24,
-        KEY_EXECUTE,
+        KEY_EXEC,
         KEY_HELP,
         KEY_MENU,
         KEY_SELECT,

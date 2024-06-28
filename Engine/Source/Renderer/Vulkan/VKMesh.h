@@ -70,7 +70,7 @@ namespace Cosmos::Vulkan
 		virtual void OnUpdate(float timestep, glm::mat4& transform) override;
 
 		// draws the mesh
-		virtual void OnRender() override;
+		virtual void OnRender(void* commandBuffer) override;
 
 		// loads the model from a filepath
 		virtual void LoadFromFile(std::string filepath, float scale = 1.0f) override;

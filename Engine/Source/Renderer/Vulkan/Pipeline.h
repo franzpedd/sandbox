@@ -128,9 +128,6 @@ namespace Cosmos::Vulkan
         // create globally-used pipeline for meshes
         void CreateMeshPipeline();
 
-        // create globally-used pipeline for silhouettes
-        void CreateSilhouettePipeline();
-
         // create globally-used pipeline for skybox
         void CreateSkyboxPipeline();
 
