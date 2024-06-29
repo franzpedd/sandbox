@@ -11,6 +11,7 @@
 #include "Pipeline.h"
 #include "VKUI.h"
 
+#include "Renderer/Buffer.h"
 #include "Core/Application.h"
 #include "Core/Event.h"
 #include "Core/Scene.h"
@@ -31,10 +32,18 @@ namespace Cosmos::Vulkan
 		mRenderpassManager = CreateShared<Vulkan::RenderpassManager>(mDevice);
 		mSwapchain = CreateShared<Vulkan::Swapchain>(mWindow, mDevice, mRenderpassManager, mConcurrentlyRenderedFrames);
 		mPipelineLibrary = CreateShared<Vulkan::PipelineLibrary>(mDevice, mRenderpassManager);
+
+		CreateGlobalResoruces();
 	}
 
 	VKRenderer::~VKRenderer()
 	{
+		// camera data
+		for (size_t i = 0; i < mConcurrentlyRenderedFrames; i++)
+		{
+			vmaUnmapMemory(mDevice->GetAllocator(), mCameraData.uniformBuffersMemory[i]);
+			vmaDestroyBuffer(mDevice->GetAllocator(), mCameraData.uniformBuffers[i], mCameraData.uniformBuffersMemory[i]);
+		}
 	}
 
 	void VKRenderer::OnUpdate()
@@ -58,6 +67,9 @@ namespace Cosmos::Vulkan
 		}
 
 		vkResetFences(mDevice->GetLogicalDevice(), 1, &mSwapchain->GetInFlightFencesRef()[mCurrentFrame]);
+
+		// send global data, like buffers into the renderer
+		SendGlobalResources();
 
 		// register draw calls based on the configuration of previously configured renderpasses
 		ManageRenderpasses();
@@ -269,6 +281,41 @@ namespace Cosmos::Vulkan
 			vkCmdEndRenderPass(cmdBuffer);
 
 			COSMOS_ASSERT(vkEndCommandBuffer(cmdBuffer) == VK_SUCCESS, "Failed to end command buffer recording");
+		}
+	}
+
+	void VKRenderer::SendGlobalResources()
+	{
+		// camera data
+		CameraBuffer ubo = {};
+		ubo.view = mCamera->GetViewRef();
+		ubo.projection = mCamera->GetProjectionRef();
+		ubo.viewProjection = mCamera->GetViewRef() * mCamera->GetProjectionRef();
+		ubo.cameraFront = mCamera->GetFrontRef();
+
+		memcpy(mCameraData.uniformBuffersMapped[mCurrentFrame], &ubo, sizeof(ubo));
+	}
+
+	void VKRenderer::CreateGlobalResoruces()
+	{
+		// camera ubo
+		mCameraData.uniformBuffers.resize(mConcurrentlyRenderedFrames);
+		mCameraData.uniformBuffersMemory.resize(mConcurrentlyRenderedFrames);
+		mCameraData.uniformBuffersMapped.resize(mConcurrentlyRenderedFrames);
+
+		for (size_t i = 0; i < mConcurrentlyRenderedFrames; i++)
+		{
+			// camera's ubo
+			mDevice->CreateBuffer
+			(
+				VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+				sizeof(CameraBuffer),
+				&mCameraData.uniformBuffers[i],
+				&mCameraData.uniformBuffersMemory[i]
+			);
+
+			vmaMapMemory(mDevice->GetAllocator(), mCameraData.uniformBuffersMemory[i], &mCameraData.uniformBuffersMapped[i]);
 		}
 	}
 }

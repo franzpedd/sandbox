@@ -33,21 +33,7 @@ namespace Cosmos::Vulkan
 	VKMesh::~VKMesh()
 	{
 		vkDeviceWaitIdle(mRenderer->GetDevice()->GetLogicalDevice());
-		
-		// camera ubo
-		for (size_t i = 0; i < mRenderer->GetConcurrentlyRenderedFramesCount(); i++)
-		{
-			vmaUnmapMemory(mRenderer->GetDevice()->GetAllocator(), mUniformBuffersMemory[i]);
-			vmaDestroyBuffer(mRenderer->GetDevice()->GetAllocator(), mUniformBuffers[i], mUniformBuffersMemory[i]);
-		}
 
-		// util ubo
-		for (size_t i = 0; i < mRenderer->GetConcurrentlyRenderedFramesCount(); i++)
-		{
-			vmaUnmapMemory(mRenderer->GetDevice()->GetAllocator(), mUtilitiesBuffersMemory[i]);
-			vmaDestroyBuffer(mRenderer->GetDevice()->GetAllocator(), mUtilitiesBuffers[i], mUtilitiesBuffersMemory[i]);
-		}
-		
 		vkDestroyDescriptorPool(mRenderer->GetDevice()->GetLogicalDevice(), mDescriptorPool, nullptr);
 		vmaDestroyBuffer(mRenderer->GetDevice()->GetAllocator(), mVertexBuffer, mVertexMemory);
 		
@@ -62,39 +48,19 @@ namespace Cosmos::Vulkan
 		}
 	}
 
-	void VKMesh::OnUpdate(float timestep, glm::mat4& transform)
+	void VKMesh::OnUpdate(float timestep)
 	{
 		// update mvp
 		if (!mLoaded) return;
-
-		MVP_Buffer ubo = {};
-		ubo.model = transform;
-		ubo.view = mRenderer->GetCamera()->GetViewRef() * 2.0f;
-		ubo.projection = mRenderer->GetCamera()->GetProjectionRef();
-		ubo.cameraPos = mRenderer->GetCamera()->GetPositionRef();
-
-		memcpy(mUniformBuffersMapped[mRenderer->GetCurrentFrame()], &ubo, sizeof(ubo));
-
-		int x, y;
-		Window::GetMousePosition(&x, &y);
-		auto extent = mRenderer->GetSwapchain()->GetExtent();
-
-		// update utils
-		Util_Buffer util_ubo = {};
-		util_ubo.selected = (mPicked == true ? (float)1.0f : (float)0.0f);
-		util_ubo.picking = mRenderer->GetPicking();
-		util_ubo.mousePos = glm::vec2((float)x, (float)y);
-		util_ubo.windowSize = glm::vec2(extent.width, extent.height);
-		memcpy(mUtilitiesBuffersMapped[mRenderer->GetCurrentFrame()], &util_ubo, sizeof(util_ubo));
 	}
 
-	void VKMesh::OnRender(void* commandBuffer)
+	void VKMesh::OnRender(void* commandBuffer, glm::mat4& transform, uint64_t id)
 	{
 		uint32_t currentFrame = mRenderer->GetCurrentFrame();
 		VkDeviceSize offsets[] = { 0 };
 		VkCommandBuffer cmdBuffer = (VkCommandBuffer)commandBuffer; //mRenderer->GetRenderpassManager()->GetMainRenderpass()->GetSpecificationRef().commandBuffers[currentFrame];
-		VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
-		VkPipeline pipeline = VK_NULL_HANDLE;
+		VkPipelineLayout pipelineLayout = mRenderer->GetPipelineLibrary()->GetPipelinesRef()["Mesh.Common"]->GetPipelineLayout();
+		VkPipeline pipeline = mRenderer->GetPipelineLibrary()->GetPipelinesRef()["Mesh.Common"]->GetPipeline();
 
 		if (mWiredframe)
 		{
@@ -102,16 +68,15 @@ namespace Cosmos::Vulkan
 			pipelineLayout = mRenderer->GetPipelineLibrary()->GetPipelinesRef()["Mesh.Wireframed"]->GetPipelineLayout();
 		}
 
-		else
-		{
-			pipeline = mRenderer->GetPipelineLibrary()->GetPipelinesRef()["Mesh.Common"]->GetPipeline();
-			pipelineLayout = mRenderer->GetPipelineLibrary()->GetPipelinesRef()["Mesh.Common"]->GetPipelineLayout();
-		}
-
 		vkCmdBindVertexBuffers(cmdBuffer, 0, 1, &mVertexBuffer, offsets);
 		vkCmdBindIndexBuffer(cmdBuffer, mIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
 		vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &mDescriptorSets[mRenderer->GetCurrentFrame()], 0, NULL);
 		vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+
+		ObjectPushConstant constants = {};
+		constants.id = (uint32_t)id;
+		constants.model = transform;
+		vkCmdPushConstants(cmdBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(ObjectPushConstant), &constants);
 
 		// render all nodes at top-level
 		for (auto& node : mNodes)
@@ -432,53 +397,16 @@ namespace Cosmos::Vulkan
 
 	void VKMesh::SetupDescriptors()
 	{
-		// model * view * projection ubo
-		mUniformBuffers.resize(mRenderer->GetConcurrentlyRenderedFramesCount());
-		mUniformBuffersMemory.resize(mRenderer->GetConcurrentlyRenderedFramesCount());
-		mUniformBuffersMapped.resize(mRenderer->GetConcurrentlyRenderedFramesCount());
-
-		// utilities ubo
-		mUtilitiesBuffers.resize(mRenderer->GetConcurrentlyRenderedFramesCount());
-		mUtilitiesBuffersMemory.resize(mRenderer->GetConcurrentlyRenderedFramesCount());
-		mUtilitiesBuffersMapped.resize(mRenderer->GetConcurrentlyRenderedFramesCount());
-
-		for (size_t i = 0; i < mRenderer->GetConcurrentlyRenderedFramesCount(); i++)
-		{
-			// camera's ubo
-			mRenderer->GetDevice()->CreateBuffer
-			(
-				VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-				sizeof(MVP_Buffer),
-				&mUniformBuffers[i],
-				&mUniformBuffersMemory[i]
-			);
-
-			vmaMapMemory(mRenderer->GetDevice()->GetAllocator(), mUniformBuffersMemory[i], &mUniformBuffersMapped[i]);
-
-			mRenderer->GetDevice()->CreateBuffer
-			(
-				VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-				sizeof(Util_Buffer),
-				&mUtilitiesBuffers[i],
-				&mUtilitiesBuffersMemory[i]
-			);
-
-			vmaMapMemory(mRenderer->GetDevice()->GetAllocator(), mUtilitiesBuffersMemory[i], &mUtilitiesBuffersMapped[i]);
-		}
-
 		// textures
 		mMaterial.colormapTex = VKTexture2D::Create(mRenderer, mMaterial.colormapPath.c_str(), true);
 
 		// descriptor pool and descriptor sets
-		std::array<VkDescriptorPoolSize, 3> poolSizes = {};
+		std::array<VkDescriptorPoolSize, 2> poolSizes = {};
 		poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		poolSizes[0].descriptorCount = mRenderer->GetConcurrentlyRenderedFramesCount();
-		poolSizes[1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+
+		poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		poolSizes[1].descriptorCount = mRenderer->GetConcurrentlyRenderedFramesCount();
-		poolSizes[2].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		poolSizes[2].descriptorCount = mRenderer->GetConcurrentlyRenderedFramesCount();
 
 		VkDescriptorPoolCreateInfo descPoolCI = {};
 		descPoolCI.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -487,17 +415,7 @@ namespace Cosmos::Vulkan
 		descPoolCI.maxSets = mRenderer->GetConcurrentlyRenderedFramesCount();
 		COSMOS_ASSERT(vkCreateDescriptorPool(mRenderer->GetDevice()->GetLogicalDevice(), &descPoolCI, nullptr, &mDescriptorPool) == VK_SUCCESS, "Failed to create descriptor pool");
 
-		VkDescriptorSetLayout descriptorSetLayout;
-
-		if (mWiredframe)
-		{
-			descriptorSetLayout = mRenderer->GetPipelineLibrary()->GetPipelinesRef()["Mesh.Common"]->GetDescriptorSetLayout();
-		}
-
-		else
-		{
-			descriptorSetLayout = mRenderer->GetPipelineLibrary()->GetPipelinesRef()["Mesh.Wireframed"]->GetDescriptorSetLayout();
-		}
+		VkDescriptorSetLayout descriptorSetLayout = mRenderer->GetPipelineLibrary()->GetPipelinesRef()["Mesh.Common"]->GetDescriptorSetLayout();
 
 		std::vector<VkDescriptorSetLayout> layouts
 		(
@@ -524,9 +442,9 @@ namespace Cosmos::Vulkan
 			// camera ubo
 			{
 				VkDescriptorBufferInfo cameraUBOInfo = {};
-				cameraUBOInfo.buffer = mUniformBuffers[i];
+				cameraUBOInfo.buffer = mRenderer->GetCameraDataRef().uniformBuffers[i];
 				cameraUBOInfo.offset = 0;
-				cameraUBOInfo.range = sizeof(MVP_Buffer);
+				cameraUBOInfo.range = sizeof(CameraBuffer);
 
 				VkWriteDescriptorSet cameraUBODesc = {};
 				cameraUBODesc.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -537,24 +455,6 @@ namespace Cosmos::Vulkan
 				cameraUBODesc.descriptorCount = 1;
 				cameraUBODesc.pBufferInfo = &cameraUBOInfo;
 				descriptorWrites.push_back(cameraUBODesc);
-			}
-			
-			// utilities ubo
-			{
-				VkDescriptorBufferInfo utilitiesUBO = {};
-				utilitiesUBO.buffer = mUtilitiesBuffers[i];
-				utilitiesUBO.offset = 0;
-				utilitiesUBO.range = sizeof(Util_Buffer);
-
-				VkWriteDescriptorSet utilitiesUBODesc = {};
-				utilitiesUBODesc.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-				utilitiesUBODesc.dstSet = mDescriptorSets[i];
-				utilitiesUBODesc.dstBinding = 1;
-				utilitiesUBODesc.dstArrayElement = 0;
-				utilitiesUBODesc.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-				utilitiesUBODesc.descriptorCount = 1;
-				utilitiesUBODesc.pBufferInfo = &utilitiesUBO;
-				descriptorWrites.push_back(utilitiesUBODesc);
 			}
 
 			// color map
@@ -567,7 +467,7 @@ namespace Cosmos::Vulkan
 				VkWriteDescriptorSet colorMapDec = {};
 				colorMapDec.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 				colorMapDec.dstSet = mDescriptorSets[i];
-				colorMapDec.dstBinding = 2;
+				colorMapDec.dstBinding = 3;
 				colorMapDec.dstArrayElement = 0;
 				colorMapDec.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 				colorMapDec.descriptorCount = 1;

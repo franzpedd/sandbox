@@ -1,12 +1,13 @@
 #version 450
+#extension GL_KHR_vulkan_glsl : enable
 
-layout(binding = 0) uniform MVP_UBO
+layout(set = 0, binding = 0) uniform ubo
 {
-    mat4 model;
     mat4 view;
     mat4 proj;
-    vec3 cameraPos;
-} ubo;
+    mat4 viewProj;
+    vec3 cameraFront;
+} camera;
 
 layout(location = 1) in vec3 inNearPoint;
 layout(location = 2) in vec3 inFarPoint;
@@ -45,7 +46,7 @@ vec4 Grid(vec3 pos, float scale)
 // calculates depth for the fragment
 float ComputeDepth(vec3 pos)
 {
-    vec4 clipSpace = ubo.proj * ubo.view * vec4(pos.xyz, 1.0);
+    vec4 clipSpace = camera.proj * camera.view * vec4(pos.xyz, 1.0);
 
     return (clipSpace.z / clipSpace.w);
 }
@@ -54,7 +55,7 @@ float ComputeDepth(vec3 pos)
 float ComputeLinearDepth(vec3 pos)
 {
     // calculates depth
-    vec4 clipSpace = ubo.proj * ubo.view * vec4(pos.xyz, 1.0);
+    vec4 clipSpace = camera.proj * camera.view * vec4(pos.xyz, 1.0);
 
     // put back between -1 and 1
     float clipDepth = (clipSpace.z / clipSpace.w) * 2.0 - 1.0; 

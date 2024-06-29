@@ -41,9 +41,6 @@ namespace Cosmos
 		// creates all framebuffer resources
 		void CreateFramebufferResources();
 
-		// create pixel-perfect resources
-		void CreatePickingResources();
-
 		// takes a screenshot from the scene
 		void TakeScreenshot(ImVec2 clickedPosition);
 
@@ -76,14 +73,6 @@ namespace Cosmos
 		std::vector<VmaAllocation> mImageMemories;
 		std::vector<VkImageView> mImageViews;
 		std::vector<VkDescriptorSet> mDescriptorSets;
-
-		// picking
-		VkImage mPickingColorImage;
-		VkImage mPickingDepthImage;
-		VmaAllocation mPickingColorMemory;
-		VmaAllocation mPickingDepthMemory;
-		VkImageView mPickingColorView;
-		VkImageView mPickingDepthView;
 	};
 
 	class SceneGizmos

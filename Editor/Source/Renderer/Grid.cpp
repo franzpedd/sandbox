@@ -17,12 +17,6 @@ namespace Cosmos
 		auto& device = std::dynamic_pointer_cast<Vulkan::VKRenderer>(mRenderer)->GetDevice();
 		vkDeviceWaitIdle(device->GetLogicalDevice());
 
-		for (size_t i = 0; i < mRenderer->GetConcurrentlyRenderedFramesCount(); i++)
-		{
-			vmaUnmapMemory(device->GetAllocator(), mUniformBuffersMemory[i]);
-			vmaDestroyBuffer(device->GetAllocator(), mUniformBuffers[i], mUniformBuffersMemory[i]);
-		}
-
 		vkDestroyDescriptorPool(device->GetLogicalDevice(), mDescriptorPool, nullptr);
 	}
 
@@ -42,13 +36,7 @@ namespace Cosmos
 
 	void Grid::OnUpdate()
 	{
-		MVP_Buffer ubo = {};
-		ubo.model = glm::mat4(1.0f);
-		ubo.view = mRenderer->GetCamera()->GetViewRef();
-		ubo.projection = mRenderer->GetCamera()->GetProjectionRef();
-		ubo.cameraPos = mRenderer->GetCamera()->GetPositionRef();
 
-		memcpy(mUniformBuffersMapped[mRenderer->GetCurrentFrame()], &ubo, sizeof(ubo));
 	}
 
 	void Grid::ToogleOnOff()
@@ -70,7 +58,7 @@ namespace Cosmos
 			gridSpecificaiton.notPassingVertexData = true;
 			gridSpecificaiton.bindings.resize(1);
 
-			// model view projection
+			// camera ubo
 			gridSpecificaiton.bindings[0].binding = 0;
 			gridSpecificaiton.bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 			gridSpecificaiton.bindings[0].descriptorCount = 1;
@@ -82,28 +70,6 @@ namespace Cosmos
 
 			// build the pipeline
 			vkRenderer->GetPipelineLibrary()->GetPipelinesRef()["Grid"]->Build(vkRenderer->GetPipelineLibrary()->GetPipelineCache());
-		}
-
-		// matrix ubo
-		{
-			mUniformBuffers.resize(mRenderer->GetConcurrentlyRenderedFramesCount());
-			mUniformBuffersMemory.resize(mRenderer->GetConcurrentlyRenderedFramesCount());
-			mUniformBuffersMapped.resize(mRenderer->GetConcurrentlyRenderedFramesCount());
-
-			for (size_t i = 0; i < mRenderer->GetConcurrentlyRenderedFramesCount(); i++)
-			{
-				vkRenderer->GetDevice()->CreateBuffer
-				(
-					VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-					VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-					sizeof(MVP_Buffer),
-					&mUniformBuffers[i],
-					&mUniformBuffersMemory[i],
-					&mUniformBuffersMapped[i]
-				);
-
-				vmaMapMemory(vkRenderer->GetDevice()->GetAllocator(), mUniformBuffersMemory[i], &mUniformBuffersMapped[i]);
-			}
 		}
 
 		// create descriptor pool and descriptor sets
@@ -133,9 +99,9 @@ namespace Cosmos
 			for (size_t i = 0; i < mRenderer->GetConcurrentlyRenderedFramesCount(); i++)
 			{
 				VkDescriptorBufferInfo bufferInfo{};
-				bufferInfo.buffer = mUniformBuffers[i];
+				bufferInfo.buffer = vkRenderer->GetCameraDataRef().uniformBuffers[i];
 				bufferInfo.offset = 0;
-				bufferInfo.range = sizeof(MVP_Buffer);
+				bufferInfo.range = sizeof(CameraBuffer);
 
 				VkWriteDescriptorSet descriptorWrite{};
 				descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;

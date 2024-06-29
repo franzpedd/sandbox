@@ -61,13 +61,32 @@ namespace Cosmos::Vulkan
 		// organize the render passes order into the draw command
 		void ManageRenderpasses();
 
-	private:		
+		// sends global resources into the renderer
+		void SendGlobalResources();
+
+		// create globally used resources
+		void CreateGlobalResoruces();
+
+	private:
 
 		Shared<Instance> mInstance;
 		Shared<Device> mDevice;
 		Shared<RenderpassManager> mRenderpassManager;
 		Shared<Swapchain> mSwapchain;
 		Shared<PipelineLibrary> mPipelineLibrary;
+		
+		struct CameraData
+		{
+			std::vector<VkBuffer> uniformBuffers = {};
+			std::vector<VmaAllocation> uniformBuffersMemory = {};
+			std::vector<void*> uniformBuffersMapped = {};
+		} mCameraData;
+
+	public:
+
+		// returns a reference to the camera global buffer
+		inline CameraData& GetCameraDataRef() { return mCameraData; }
+		
 	};
 }
 

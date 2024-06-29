@@ -25,29 +25,27 @@ namespace Cosmos
 		auto meshView = mRegistry.view<IDComponent, TransformComponent, MeshComponent>();
 		for (auto ent : meshView)
 		{
-			auto [transformComponent, meshComponent] = meshView.get<TransformComponent, MeshComponent>(ent);
+			auto [idComponent, transformComponent, meshComponent] = meshView.get<IDComponent, TransformComponent, MeshComponent>(ent);
 
 			if (meshComponent.mesh == nullptr || !meshComponent.mesh->IsLoaded())
 				continue;
 
-			meshComponent.mesh->OnUpdate(timestep, transformComponent.GetTransform());
+			meshComponent.mesh->OnUpdate(timestep);
 		}
-
-		//mRenderer->SetPicking(false); // resets mouse picking
 	}
 
 	void Scene::OnRender(void* commandBuffer)
 	{
 		// draw models
-		auto meshView = mRegistry.view<MeshComponent>();
+		auto meshView = mRegistry.view<IDComponent, TransformComponent, MeshComponent>();
 		for (auto ent : meshView)
 		{
-			auto [meshComponent] = meshView.get<MeshComponent>(ent);
+			auto [idComponent, transformComponent, meshComponent] = meshView.get<IDComponent, TransformComponent, MeshComponent>(ent);
 
-			if (meshComponent == nullptr || !meshComponent->IsLoaded())
+			if (meshComponent.mesh == nullptr || !meshComponent.mesh->IsLoaded())
 				continue;
 
-			meshComponent->OnRender(commandBuffer);
+			meshComponent.mesh->OnRender(commandBuffer, transformComponent.GetTransform(), idComponent.id);
 		}
 	}
 

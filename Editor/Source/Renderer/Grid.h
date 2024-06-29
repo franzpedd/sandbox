@@ -42,8 +42,8 @@ namespace Cosmos
 		VkDescriptorPool mDescriptorPool = VK_NULL_HANDLE;
 		std::vector<VkDescriptorSet> mDescriptorSets;
 
-		std::vector<VkBuffer> mUniformBuffers;
-		std::vector<VmaAllocation> mUniformBuffersMemory;
-		std::vector<void*> mUniformBuffersMapped;
+		//std::vector<VkBuffer> mUniformBuffers;
+		//std::vector<VmaAllocation> mUniformBuffersMemory;
+		//std::vector<void*> mUniformBuffersMapped;
 	};
 }

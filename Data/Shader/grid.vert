@@ -1,13 +1,13 @@
 #version 450
 #extension GL_KHR_vulkan_glsl : enable
 
-layout(binding = 0) uniform MVP_UBO
+layout(set = 0, binding = 0) uniform ubo
 {
-    mat4 model;
     mat4 view;
     mat4 proj;
-    vec3 cameraPos;
-} ubo;
+    mat4 viewProj;
+    vec3 cameraFront;
+} camera;
 
 layout(location = 1) out vec3 outNearPoint;
 layout(location = 2) out vec3 outFarPoint;
@@ -39,10 +39,10 @@ void main()
     vec3 point = GridPlane[gl_VertexIndex].xyz;
 
     // unproject the near plane to infinity
-    outNearPoint = UnprojectPoint(point.x, point.y, 0.0, ubo.view, ubo.proj).xyz;
+    outNearPoint = UnprojectPoint(point.x, point.y, 0.0, camera.view, camera.proj).xyz;
 
     // unproject the far plane to infinity
-    outFarPoint = UnprojectPoint(point.x, point.y, 1.0, ubo.view, ubo.proj).xyz;
+    outFarPoint = UnprojectPoint(point.x, point.y, 1.0, camera.view, camera.proj).xyz;
 
     // using directly the clipped coordinates
     gl_Position = vec4(point, 1.0);

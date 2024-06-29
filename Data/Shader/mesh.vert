@@ -1,13 +1,19 @@
 #version 450
 #extension GL_KHR_vulkan_glsl : enable
 
-layout(set = 0, binding = 0) uniform MVP_UBO
+layout(set = 0, binding = 0) uniform ubo
 {
-    mat4 model;
     mat4 view;
     mat4 proj;
-    vec3 cameraPos;
-} ubo;
+    mat4 viewProj;
+    vec3 cameraFront;
+} camera;
+
+layout(push_constant) uniform constants
+{
+    uint id;
+	mat4 model;
+} pushConstant;
 
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec3 inNormal;
@@ -19,7 +25,7 @@ layout(location = 1) out vec2 outFragTexCoord;
 void main()
 {
     // set vertex position on world
-    gl_Position = ubo.proj * ubo.view * ubo.model * vec4(inPosition, 1.0);
+    gl_Position = camera.proj * camera.view * pushConstant.model * vec4(inPosition, 1.0);
 
     // output variables for the fragment shader
     outFragTexCoord = inTexCoord;

@@ -67,10 +67,10 @@ namespace Cosmos::Vulkan
 	public:
 
 		// updates the mesh logic
-		virtual void OnUpdate(float timestep, glm::mat4& transform) override;
+		virtual void OnUpdate(float timestep) override;
 
 		// draws the mesh
-		virtual void OnRender(void* commandBuffer) override;
+		virtual void OnRender(void* commandBuffer, glm::mat4& transform, uint64_t id) override;
 
 		// loads the model from a filepath
 		virtual void LoadFromFile(std::string filepath, float scale = 1.0f) override;
@@ -130,16 +130,6 @@ namespace Cosmos::Vulkan
 		// shader descriptors
 		VkDescriptorPool mDescriptorPool = VK_NULL_HANDLE;
 		std::vector<VkDescriptorSet> mDescriptorSets = {};
-
-		// camera's model, view and projection ubo
-		std::vector<VkBuffer> mUniformBuffers = {};
-		std::vector<VmaAllocation> mUniformBuffersMemory = {};
-		std::vector<void*> mUniformBuffersMapped = {};
-
-		// utilities buffer
-		std::vector<VkBuffer> mUtilitiesBuffers = {};
-		std::vector<VmaAllocation> mUtilitiesBuffersMemory = {};
-		std::vector<void*> mUtilitiesBuffersMapped = {};
 	};
 }
 
