@@ -290,10 +290,10 @@ namespace Cosmos::Vulkan
         VkPushConstantRange pushConstant = {};
         pushConstant.offset = 0;
         pushConstant.size = sizeof(CameraBuffer);
-        pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+        pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
         meshSpecification.pushConstants.push_back(pushConstant);
         
-        meshSpecification.bindings.resize(2);
+        meshSpecification.bindings.resize(3);
         
         // camera ubo
         meshSpecification.bindings[0].binding = 0;
@@ -302,12 +302,18 @@ namespace Cosmos::Vulkan
         meshSpecification.bindings[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
         meshSpecification.bindings[0].pImmutableSamplers = nullptr;
 
-        // color map
-        meshSpecification.bindings[1].binding = 3;
-        meshSpecification.bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        meshSpecification.bindings[1].binding = 1;
+        meshSpecification.bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         meshSpecification.bindings[1].descriptorCount = 1;
-        meshSpecification.bindings[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+        meshSpecification.bindings[1].stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
         meshSpecification.bindings[1].pImmutableSamplers = nullptr;
+
+        // color map
+        meshSpecification.bindings[2].binding = 3;
+        meshSpecification.bindings[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        meshSpecification.bindings[2].descriptorCount = 1;
+        meshSpecification.bindings[2].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+        meshSpecification.bindings[2].pImmutableSamplers = nullptr;
         
         // common
         {

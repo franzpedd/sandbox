@@ -76,7 +76,7 @@ namespace Cosmos::Vulkan
 		ObjectPushConstant constants = {};
 		constants.id = (uint32_t)id;
 		constants.model = transform;
-		vkCmdPushConstants(cmdBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(ObjectPushConstant), &constants);
+		vkCmdPushConstants(cmdBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(ObjectPushConstant), &constants);
 
 		// render all nodes at top-level
 		for (auto& node : mNodes)
@@ -455,6 +455,24 @@ namespace Cosmos::Vulkan
 				cameraUBODesc.descriptorCount = 1;
 				cameraUBODesc.pBufferInfo = &cameraUBOInfo;
 				descriptorWrites.push_back(cameraUBODesc);
+			}
+
+			// storage ubo
+			{
+				VkDescriptorBufferInfo storageBufferInfo = {};
+				storageBufferInfo.buffer = mRenderer->GetStorageDataRef().storageBuffers[i];
+				storageBufferInfo.offset = 0;
+				storageBufferInfo.range = sizeof(StorageBuffer);
+
+				VkWriteDescriptorSet storageDesc = {};
+				storageDesc.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				storageDesc.dstSet = mDescriptorSets[i];
+				storageDesc.dstBinding = 1;
+				storageDesc.dstArrayElement = 0;
+				storageDesc.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+				storageDesc.descriptorCount = 1;
+				storageDesc.pBufferInfo = &storageBufferInfo;
+				descriptorWrites.push_back(storageDesc);
 			}
 
 			// color map

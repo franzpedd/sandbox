@@ -99,6 +99,7 @@ namespace Cosmos
 
 			if (insideViewport)
 			{
+				//
 				// this works, but i cant' read the ubo's
 				//TakeScreenshot(cursorClickPosition);
 				

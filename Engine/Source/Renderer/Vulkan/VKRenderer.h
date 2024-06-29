@@ -82,11 +82,20 @@ namespace Cosmos::Vulkan
 			std::vector<void*> uniformBuffersMapped = {};
 		} mCameraData;
 
+		struct StorageData
+		{
+			std::vector<VkBuffer> storageBuffers = {};
+			std::vector<VmaAllocation> storageBuffersMemory = {};
+			std::vector<void*> storageBuffersMapped = {};
+		} mStorageData;
+
 	public:
 
 		// returns a reference to the camera global buffer
 		inline CameraData& GetCameraDataRef() { return mCameraData; }
 		
+		// returns a reference tot he global storage buffer
+		inline StorageData& GetStorageDataRef() { return mStorageData; }
 	};
 }
 

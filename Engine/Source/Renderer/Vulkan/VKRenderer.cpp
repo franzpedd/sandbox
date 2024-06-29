@@ -38,11 +38,15 @@ namespace Cosmos::Vulkan
 
 	VKRenderer::~VKRenderer()
 	{
-		// camera data
 		for (size_t i = 0; i < mConcurrentlyRenderedFrames; i++)
 		{
+			// camera data
 			vmaUnmapMemory(mDevice->GetAllocator(), mCameraData.uniformBuffersMemory[i]);
 			vmaDestroyBuffer(mDevice->GetAllocator(), mCameraData.uniformBuffers[i], mCameraData.uniformBuffersMemory[i]);
+
+			// storage data
+			vmaUnmapMemory(mDevice->GetAllocator(), mStorageData.storageBuffersMemory[i]);
+			vmaDestroyBuffer(mDevice->GetAllocator(), mStorageData.storageBuffers[i], mStorageData.storageBuffersMemory[i]);
 		}
 	}
 
@@ -287,13 +291,22 @@ namespace Cosmos::Vulkan
 	void VKRenderer::SendGlobalResources()
 	{
 		// camera data
-		CameraBuffer ubo = {};
-		ubo.view = mCamera->GetViewRef();
-		ubo.projection = mCamera->GetProjectionRef();
-		ubo.viewProjection = mCamera->GetViewRef() * mCamera->GetProjectionRef();
-		ubo.cameraFront = mCamera->GetFrontRef();
+		CameraBuffer camera = {};
+		camera.view = mCamera->GetViewRef();
+		camera.projection = mCamera->GetProjectionRef();
+		camera.viewProjection = mCamera->GetViewRef() * mCamera->GetProjectionRef();
+		camera.cameraFront = mCamera->GetFrontRef();
 
-		memcpy(mCameraData.uniformBuffersMapped[mCurrentFrame], &ubo, sizeof(ubo));
+		memcpy(mCameraData.uniformBuffersMapped[mCurrentFrame], &camera, sizeof(camera));
+
+		// storage buffer
+		int x, y;
+		auto win = mApplication->GetWindow();
+		win->GetMousePosition(&x, &y);
+
+		StorageBuffer storage = {};
+		storage.mousePos = glm::vec2((float)x, (float)y);
+		//storage.pickingDepth = ;// DONT WRITE;
 	}
 
 	void VKRenderer::CreateGlobalResoruces()
@@ -302,6 +315,11 @@ namespace Cosmos::Vulkan
 		mCameraData.uniformBuffers.resize(mConcurrentlyRenderedFrames);
 		mCameraData.uniformBuffersMemory.resize(mConcurrentlyRenderedFrames);
 		mCameraData.uniformBuffersMapped.resize(mConcurrentlyRenderedFrames);
+
+		// storage ubo
+		mStorageData.storageBuffers.resize(mConcurrentlyRenderedFrames);
+		mStorageData.storageBuffersMemory.resize(mConcurrentlyRenderedFrames);
+		mStorageData.storageBuffersMapped.resize(mConcurrentlyRenderedFrames);
 
 		for (size_t i = 0; i < mConcurrentlyRenderedFrames; i++)
 		{
@@ -316,6 +334,18 @@ namespace Cosmos::Vulkan
 			);
 
 			vmaMapMemory(mDevice->GetAllocator(), mCameraData.uniformBuffersMemory[i], &mCameraData.uniformBuffersMapped[i]);
+
+			// storage's ubo
+			mDevice->CreateBuffer
+			(
+				VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+				sizeof(StorageBuffer),
+				&mStorageData.storageBuffers[i],
+				&mStorageData.storageBuffersMemory[i]
+			);
+
+			vmaMapMemory(mDevice->GetAllocator(), mStorageData.storageBuffersMemory[i], &mStorageData.storageBuffersMapped[i]);
 		}
 	}
 }
