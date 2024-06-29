@@ -75,27 +75,31 @@ namespace Cosmos::Vulkan
 		Shared<Swapchain> mSwapchain;
 		Shared<PipelineLibrary> mPipelineLibrary;
 		
-		struct CameraData
+		struct GPUBufferData
 		{
-			std::vector<VkBuffer> uniformBuffers = {};
-			std::vector<VmaAllocation> uniformBuffersMemory = {};
-			std::vector<void*> uniformBuffersMapped = {};
-		} mCameraData;
+			std::vector<VkBuffer> buffers = {};
+			std::vector<VmaAllocation> memories = {};
+			std::vector<void*> mapped = {};
+		};
 
-		struct StorageData
-		{
-			std::vector<VkBuffer> storageBuffers = {};
-			std::vector<VmaAllocation> storageBuffersMemory = {};
-			std::vector<void*> storageBuffersMapped = {};
-		} mStorageData;
+		GPUBufferData mCameraData;
+		GPUBufferData mWindowData;
+		GPUBufferData mPickingData;
+		uint32_t mPickingID = 0;
 
 	public:
 
 		// returns a reference to the camera global buffer
-		inline CameraData& GetCameraDataRef() { return mCameraData; }
+		inline GPUBufferData& GetCameraDataRef() { return mCameraData; }
+
+		// returns a reference tot he global window buffer
+		inline GPUBufferData& GetWindowDataRef() { return mWindowData; }
 		
-		// returns a reference tot he global storage buffer
-		inline StorageData& GetStorageDataRef() { return mStorageData; }
+		// returns a reference tot he global picking buffer
+		inline GPUBufferData& GetPickingDataRef() { return mPickingData; }
+
+	private:
+
 	};
 }
 

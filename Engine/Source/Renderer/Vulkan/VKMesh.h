@@ -70,15 +70,10 @@ namespace Cosmos::Vulkan
 		virtual void OnUpdate(float timestep) override;
 
 		// draws the mesh
-		virtual void OnRender(void* commandBuffer, glm::mat4& transform, uint64_t id) override;
+		virtual void OnRender(void* commandBuffer, glm::mat4& transform, uint32_t id) override;
 
 		// loads the model from a filepath
 		virtual void LoadFromFile(std::string filepath, float scale = 1.0f) override;
-
-	public:
-
-		// sets the mesh as mouse-picked or not
-		inline virtual void SetPicked(bool value) override { mPicked = value; }
 
 	public:
 

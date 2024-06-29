@@ -45,15 +45,10 @@ namespace Cosmos
 		virtual void OnUpdate(float timestep) = 0;
 
 		// draws the mesh
-		virtual void OnRender(void* commandBuffer, glm::mat4& transform, uint64_t id) = 0;
+		virtual void OnRender(void* commandBuffer, glm::mat4& transform, uint32_t id) = 0;
 
 		// loads the model from a filepath
 		virtual void LoadFromFile(std::string filepath, float scale = 1.0f) = 0;
-
-	public:
-
-		// sets the mesh as mouse-picked or not
-		virtual void SetPicked(bool value) = 0;
 
 	public: // materials
 

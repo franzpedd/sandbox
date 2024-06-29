@@ -14,7 +14,7 @@ namespace Cosmos
 		{
 			size_t operator()(const UUID& id) const
 			{
-				size_t hash = std::hash<uint64_t>()(id.mUUID);
+				size_t hash = std::hash<uint32_t>()(id.mUUID);
 				return hash;
 			}
 		};
@@ -25,7 +25,7 @@ namespace Cosmos
 		UUID();
 
 		// constructor with value
-		UUID(uint64_t id);
+		UUID(uint32_t id);
 
 		// constructor with str value
 		UUID(std::string id);
@@ -34,10 +34,10 @@ namespace Cosmos
 		~UUID() = default;
 
 		// returns the uuid
-		inline uint64_t GetValue() const { return mUUID; }
+		inline uint32_t GetValue() const { return mUUID; }
 
 		// returns the id
-		operator uint64_t() const { return mUUID; }
+		operator uint32_t() const { return mUUID; }
 
 		// used for using unordered map with hashing
 		bool operator==(const UUID& id) const
@@ -54,6 +54,6 @@ namespace Cosmos
 
 	private:
 
-		uint64_t mUUID;
+		uint32_t mUUID;
 	};
 }

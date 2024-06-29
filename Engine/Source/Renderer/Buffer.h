@@ -20,10 +20,17 @@ namespace Cosmos
 		alignas(16) glm::vec3 cameraFront = glm::vec3(1.0f);
 	};
 
-	// contains usefull data, like mouse coords and picking max depth
-	struct StorageBuffer
+	// contains the window attributes
+	struct WindowBuffer
 	{
-		alignas(4) glm::vec2 mousePos = glm::vec2(0.0f);
-		alignas(4) uint32_t pickingDepth[256]; // this is the depth distance of the scene when performing mouse picking, changing this requires changing on shader
+		alignas(4) uint32_t selectedID = 0;
+		alignas(8) glm::vec2 mousePos = glm::vec2(1.0f);
+	};
+
+	// contains usefull data, like mouse coords and picking max depth
+	#define Z_DEPTH 64 
+	struct PickingDepthBuffer
+	{
+		alignas(4) uint32_t pickingDepth[Z_DEPTH] = {0}; // this is the depth distance of the scene when performing mouse picking, changing this requires changing on shader
 	};
 }

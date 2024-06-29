@@ -99,7 +99,7 @@ namespace Cosmos
 			for (size_t i = 0; i < mRenderer->GetConcurrentlyRenderedFramesCount(); i++)
 			{
 				VkDescriptorBufferInfo bufferInfo{};
-				bufferInfo.buffer = vkRenderer->GetCameraDataRef().uniformBuffers[i];
+				bufferInfo.buffer = vkRenderer->GetCameraDataRef().buffers[i];
 				bufferInfo.offset = 0;
 				bufferInfo.range = sizeof(CameraBuffer);
 

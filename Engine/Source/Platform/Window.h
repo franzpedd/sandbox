@@ -74,6 +74,9 @@ namespace Cosmos
 
 	public: // window 
 
+		// returns window size
+		void GetSize(int* x, int* y);
+
 		// returns the framebuffer size
 		void GetFrameBufferSize(int32_t* width, int32_t* height);
 

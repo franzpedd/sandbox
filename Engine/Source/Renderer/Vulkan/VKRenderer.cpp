@@ -41,12 +41,16 @@ namespace Cosmos::Vulkan
 		for (size_t i = 0; i < mConcurrentlyRenderedFrames; i++)
 		{
 			// camera data
-			vmaUnmapMemory(mDevice->GetAllocator(), mCameraData.uniformBuffersMemory[i]);
-			vmaDestroyBuffer(mDevice->GetAllocator(), mCameraData.uniformBuffers[i], mCameraData.uniformBuffersMemory[i]);
+			vmaUnmapMemory(mDevice->GetAllocator(), mCameraData.memories[i]);
+			vmaDestroyBuffer(mDevice->GetAllocator(), mCameraData.buffers[i], mCameraData.memories[i]);
 
-			// storage data
-			vmaUnmapMemory(mDevice->GetAllocator(), mStorageData.storageBuffersMemory[i]);
-			vmaDestroyBuffer(mDevice->GetAllocator(), mStorageData.storageBuffers[i], mStorageData.storageBuffersMemory[i]);
+			// window data
+			vmaUnmapMemory(mDevice->GetAllocator(), mWindowData.memories[i]);
+			vmaDestroyBuffer(mDevice->GetAllocator(), mWindowData.buffers[i], mWindowData.memories[i]);
+
+			// picking data
+			vmaUnmapMemory(mDevice->GetAllocator(), mPickingData.memories[i]);
+			vmaDestroyBuffer(mDevice->GetAllocator(), mPickingData.buffers[i], mPickingData.memories[i]);
 		}
 	}
 
@@ -141,6 +145,33 @@ namespace Cosmos::Vulkan
 	void VKRenderer::OnEvent(Shared<Event> event)
 	{
 		Renderer::OnEvent(event);
+
+		if (event->GetType() == Event::Type::MousePress)
+		{
+			void* data;
+			vmaMapMemory(mDevice->GetAllocator(), mPickingData.memories[mCurrentFrame], (void**)&data); // aint this mapped?
+			uint32_t* u = static_cast<uint32_t*>(data);
+			uint32_t selectedID = 0;
+		
+			for (int i = 0; i < Z_DEPTH; i++)
+			{
+				if (u[i] != 0)
+				{
+					selectedID = u[i];
+					break;
+				}
+			}
+		
+			std::memset(data, 0, Z_DEPTH * sizeof(uint32_t));
+			vmaUnmapMemory(mDevice->GetAllocator(), mPickingData.memories[mCurrentFrame]);
+		
+			// we've got it, it sucks ass but I don't have a physics system yet
+			mPickingID = 0;
+			if (selectedID != 0)
+			{
+				mPickingID = selectedID;
+			}
+		}
 	}
 
 	void VKRenderer::ManageRenderpasses()
@@ -286,6 +317,36 @@ namespace Cosmos::Vulkan
 
 			COSMOS_ASSERT(vkEndCommandBuffer(cmdBuffer) == VK_SUCCESS, "Failed to end command buffer recording");
 		}
+
+		// mouse picking
+		//void* data;
+		//vmaMapMemory(mDevice->GetAllocator(), mPickingData.memories[mCurrentFrame], (void**)&data); // aint this mapped?
+		//uint32_t* u = static_cast<uint32_t*>(data);
+		//uint32_t selectedID = 0;
+		//
+		//for (int i = 0; i < Z_DEPTH; i++)
+		//{
+		//	if (u[i] != 0)
+		//	{
+		//		selectedID = u[i];
+		//		break;
+		//	}
+		//}
+		//
+		//std::memset(data, 0, Z_DEPTH * sizeof(uint32_t));
+		//vmaUnmapMemory(mDevice->GetAllocator(), mPickingData.memories[mCurrentFrame]);
+		//
+		//// we've got it
+		//
+		//if (selectedID != 0)
+		//{
+		//	mPickingID = selectedID;
+		//}
+		//
+		//else
+		//{
+		//	mPickingID = 0;
+		//}
 	}
 
 	void VKRenderer::SendGlobalResources()
@@ -296,30 +357,34 @@ namespace Cosmos::Vulkan
 		camera.projection = mCamera->GetProjectionRef();
 		camera.viewProjection = mCamera->GetViewRef() * mCamera->GetProjectionRef();
 		camera.cameraFront = mCamera->GetFrontRef();
+		memcpy(mCameraData.mapped[mCurrentFrame], &camera, sizeof(camera));
 
-		memcpy(mCameraData.uniformBuffersMapped[mCurrentFrame], &camera, sizeof(camera));
-
-		// storage buffer
+		// window data
 		int x, y;
-		auto win = mApplication->GetWindow();
-		win->GetMousePosition(&x, &y);
+		mApplication->GetWindow()->GetMousePosition(&x, &y);
 
-		StorageBuffer storage = {};
-		storage.mousePos = glm::vec2((float)x, (float)y);
-		//storage.pickingDepth = ;// DONT WRITE;
+		WindowBuffer window = {};
+		window.mousePos = glm::vec2((float)x, (float)y);
+		window.selectedID = mPickingID;
+		memcpy(mWindowData.mapped[mCurrentFrame], &window, sizeof(window));
 	}
 
 	void VKRenderer::CreateGlobalResoruces()
 	{
 		// camera ubo
-		mCameraData.uniformBuffers.resize(mConcurrentlyRenderedFrames);
-		mCameraData.uniformBuffersMemory.resize(mConcurrentlyRenderedFrames);
-		mCameraData.uniformBuffersMapped.resize(mConcurrentlyRenderedFrames);
+		mCameraData.buffers.resize(mConcurrentlyRenderedFrames);
+		mCameraData.memories.resize(mConcurrentlyRenderedFrames);
+		mCameraData.mapped.resize(mConcurrentlyRenderedFrames);
 
-		// storage ubo
-		mStorageData.storageBuffers.resize(mConcurrentlyRenderedFrames);
-		mStorageData.storageBuffersMemory.resize(mConcurrentlyRenderedFrames);
-		mStorageData.storageBuffersMapped.resize(mConcurrentlyRenderedFrames);
+		// window ubo
+		mWindowData.buffers.resize(mConcurrentlyRenderedFrames);
+		mWindowData.memories.resize(mConcurrentlyRenderedFrames);
+		mWindowData.mapped.resize(mConcurrentlyRenderedFrames);
+
+		// picking storage buffer
+		mPickingData.buffers.resize(mConcurrentlyRenderedFrames);
+		mPickingData.memories.resize(mConcurrentlyRenderedFrames);
+		mPickingData.mapped.resize(mConcurrentlyRenderedFrames);
 
 		for (size_t i = 0; i < mConcurrentlyRenderedFrames; i++)
 		{
@@ -329,23 +394,35 @@ namespace Cosmos::Vulkan
 				VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 				sizeof(CameraBuffer),
-				&mCameraData.uniformBuffers[i],
-				&mCameraData.uniformBuffersMemory[i]
+				&mCameraData.buffers[i],
+				&mCameraData.memories[i]
 			);
 
-			vmaMapMemory(mDevice->GetAllocator(), mCameraData.uniformBuffersMemory[i], &mCameraData.uniformBuffersMapped[i]);
+			vmaMapMemory(mDevice->GetAllocator(), mCameraData.memories[i], &mCameraData.mapped[i]);
 
-			// storage's ubo
+			// window ubo
+			mDevice->CreateBuffer
+			(
+				VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+				sizeof(WindowBuffer),
+				&mWindowData.buffers[i],
+				&mWindowData.memories[i]
+			);
+
+			vmaMapMemory(mDevice->GetAllocator(), mWindowData.memories[i], &mWindowData.mapped[i]);
+
+			// picking ubo
 			mDevice->CreateBuffer
 			(
 				VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-				sizeof(StorageBuffer),
-				&mStorageData.storageBuffers[i],
-				&mStorageData.storageBuffersMemory[i]
+				sizeof(PickingDepthBuffer),
+				&mPickingData.buffers[i],
+				&mPickingData.memories[i]
 			);
 
-			vmaMapMemory(mDevice->GetAllocator(), mStorageData.storageBuffersMemory[i], &mStorageData.storageBuffersMapped[i]);
+			vmaMapMemory(mDevice->GetAllocator(), mPickingData.memories[i], &mPickingData.mapped[i]);
 		}
 	}
 }

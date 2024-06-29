@@ -42,7 +42,7 @@ namespace Cosmos
 		inline void SetType(Type type) { mType = type; }
 
 		// sets a new aspect ratio for the camera
-		inline void SetAspectRatio(float aspect) { mAspectRatio = aspect; }
+		void SetAspectRatio(float aspect);
 
 		// returns the camera's aspect ratio
 		inline float GetAspectRatio() const { return mAspectRatio; }

@@ -50,11 +50,10 @@ namespace Cosmos::Vulkan
 
 	void VKMesh::OnUpdate(float timestep)
 	{
-		// update mvp
-		if (!mLoaded) return;
+		
 	}
 
-	void VKMesh::OnRender(void* commandBuffer, glm::mat4& transform, uint64_t id)
+	void VKMesh::OnRender(void* commandBuffer, glm::mat4& transform, uint32_t id)
 	{
 		uint32_t currentFrame = mRenderer->GetCurrentFrame();
 		VkDeviceSize offsets[] = { 0 };
@@ -74,7 +73,7 @@ namespace Cosmos::Vulkan
 		vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
 		ObjectPushConstant constants = {};
-		constants.id = (uint32_t)id;
+		constants.id = id;
 		constants.model = transform;
 		vkCmdPushConstants(cmdBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(ObjectPushConstant), &constants);
 
@@ -402,6 +401,7 @@ namespace Cosmos::Vulkan
 
 		// descriptor pool and descriptor sets
 		std::array<VkDescriptorPoolSize, 2> poolSizes = {};
+		COSMOS_LOG(Logger::Todo, "Remove this, is not used");
 		poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		poolSizes[0].descriptorCount = mRenderer->GetConcurrentlyRenderedFramesCount();
 
@@ -442,7 +442,7 @@ namespace Cosmos::Vulkan
 			// camera ubo
 			{
 				VkDescriptorBufferInfo cameraUBOInfo = {};
-				cameraUBOInfo.buffer = mRenderer->GetCameraDataRef().uniformBuffers[i];
+				cameraUBOInfo.buffer = mRenderer->GetCameraDataRef().buffers[i];
 				cameraUBOInfo.offset = 0;
 				cameraUBOInfo.range = sizeof(CameraBuffer);
 
@@ -457,17 +457,35 @@ namespace Cosmos::Vulkan
 				descriptorWrites.push_back(cameraUBODesc);
 			}
 
+			// window ubo
+			{
+				VkDescriptorBufferInfo windowUBOInfo = {};
+				windowUBOInfo.buffer = mRenderer->GetWindowDataRef().buffers[i];
+				windowUBOInfo.offset = 0;
+				windowUBOInfo.range = sizeof(WindowBuffer);
+
+				VkWriteDescriptorSet windowUBODesc = {};
+				windowUBODesc.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				windowUBODesc.dstSet = mDescriptorSets[i];
+				windowUBODesc.dstBinding = 1;
+				windowUBODesc.dstArrayElement = 0;
+				windowUBODesc.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+				windowUBODesc.descriptorCount = 1;
+				windowUBODesc.pBufferInfo = &windowUBOInfo;
+				descriptorWrites.push_back(windowUBODesc);
+			}
+
 			// storage ubo
 			{
 				VkDescriptorBufferInfo storageBufferInfo = {};
-				storageBufferInfo.buffer = mRenderer->GetStorageDataRef().storageBuffers[i];
+				storageBufferInfo.buffer = mRenderer->GetPickingDataRef().buffers[i];
 				storageBufferInfo.offset = 0;
-				storageBufferInfo.range = sizeof(StorageBuffer);
+				storageBufferInfo.range = sizeof(PickingDepthBuffer);
 
 				VkWriteDescriptorSet storageDesc = {};
 				storageDesc.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 				storageDesc.dstSet = mDescriptorSets[i];
-				storageDesc.dstBinding = 1;
+				storageDesc.dstBinding = 2;
 				storageDesc.dstArrayElement = 0;
 				storageDesc.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 				storageDesc.descriptorCount = 1;

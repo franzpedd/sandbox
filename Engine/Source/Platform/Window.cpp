@@ -193,6 +193,11 @@ namespace Cosmos
         SDL_GetMouseState(x, y);
     }
 
+    void Window::GetSize(int* x, int* y)
+    {
+        return SDL_GetWindowSize(mNativeWindow, x, y);
+    }
+
     void Window::GetFrameBufferSize(int32_t* width, int32_t* height)
     {
 #if defined COSMOS_RENDERER_VULKAN

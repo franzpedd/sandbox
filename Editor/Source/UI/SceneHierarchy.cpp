@@ -63,30 +63,9 @@ namespace Cosmos
 		bool selected = (mSelectedEntity == entity) ? true : false;
 
 		if (ImGui::Selectable(entity->GetComponent<NameComponent>().name.c_str(), selected, ImGuiSelectableFlags_DontClosePopups))
-		{	
-			// set's selected
-			if (mSelectedEntity != nullptr)
-			{
-				if (mSelectedEntity->HasComponent<MeshComponent>())
-				{
-					if (mSelectedEntity->GetComponent<MeshComponent>().mesh)
-					{
-						mSelectedEntity->GetComponent<MeshComponent>().mesh->SetPicked(false);
-					}
-				}
-			}
-			
+		{				
 			// selects new selected entity
 			mSelectedEntity = entity;
-			
-			// set's selected
-			if (mSelectedEntity->HasComponent<MeshComponent>())
-			{
-				if (mSelectedEntity->GetComponent<MeshComponent>().mesh)
-				{
-					mSelectedEntity->GetComponent<MeshComponent>().mesh->SetPicked(true);
-				}
-			}
 		}
 
 		if (selected)
@@ -152,7 +131,7 @@ namespace Cosmos
 		// general info
 		ImGui::Separator();
 		
-		ImGui::Text("ID: %d", entity->GetComponent<IDComponent>().id);
+		ImGui::Text("ID: %u", entity->GetComponent<IDComponent>().id);
 
 		ImGui::Text("Name: ");
 		ImGui::SameLine();
@@ -193,7 +172,6 @@ namespace Cosmos
 				if (component.mesh == nullptr)
 				{
 					component.mesh = Mesh::Create(mRenderer);
-					component.mesh->SetPicked(true);
 				}
 
 				ImGui::SeparatorText("Mesh");

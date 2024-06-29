@@ -91,45 +91,45 @@ namespace Cosmos
 
 		if (event->GetType() == Event::Type::MousePress)
 		{
-			ImVec2 cursorClickPosition = ImGui::GetMousePos();
-			bool insideViewport = cursorClickPosition.x <= mContentRegionMax.x
-				&& cursorClickPosition.y <= mContentRegionMax.y
-				&& cursorClickPosition.x >= mContentRegionMin.x
-				&& cursorClickPosition.y >= mContentRegionMin.y;
+			glm::vec3 ray_origin, ray_direction;
+			int x, y, width, height;
+			auto camera = mRenderer->GetCamera();
+			mWindow->GetMousePosition(&x, &y);
+			mWindow->GetSize(&width, &height);
 
-			if (insideViewport)
+			ScreenPosToWorldRay
+			(
+				x, y,
+				width, height,
+				camera->GetViewRef(),
+				camera->GetProjectionRef(),
+				ray_origin,
+				ray_direction
+			);
+
+			float intersection_distance; // Output of TestRayOBBIntersection()
+			glm::vec3 aabb_min(-1.0f, -1.0f, -1.0f);
+			glm::vec3 aabb_max(1.0f, 1.0f, 1.0f);
+
+			auto meshView = mScene->GetRegistryRef().view<IDComponent, TransformComponent, MeshComponent>();
+			for (auto ent : meshView)
 			{
-				//
-				// this works, but i cant' read the ubo's
-				//TakeScreenshot(cursorClickPosition);
-				
-				//// this was a bust
-				//auto extent = std::dynamic_pointer_cast<Vulkan::VKRenderer>(mRenderer)->GetSwapchain()->GetExtent();
-				//auto camera = mRenderer->GetCamera();
-				//glm::vec3 origin = camera->GetFrontRef();
-				//glm::vec3 direction = glm::vec3(0.0f);
-				//
-				//ScreenPosToWorldRay((int)cursorClickPosition.x, (int)cursorClickPosition.y, (int)mCurrentSize.x, (int)mCurrentSize.y,
-				//	camera->GetViewRef(), camera->GetProjectionRef(), origin, direction);
-				//
-				//auto meshView = mScene->GetRegistryRef().view<TransformComponent, MeshComponent>();
-				//
-				//for (auto ent : meshView)
-				//{
-				//	auto [transformComponent, meshComponent] = meshView.get<TransformComponent, MeshComponent>(ent);
-				//
-				//	if (meshComponent.mesh == nullptr || !meshComponent.mesh->IsLoaded())
-				//		continue;
-				//	
-				//	float intersection_distance;
-				//	glm::vec3 aabb_min(-1.0f, -1.0f, -1.0f);
-				//	glm::vec3 aabb_max(1.0f, 1.0f, 1.0f);
-				//
-				//	if (TestRayOBBIntersection(origin, direction, aabb_min, aabb_max, transformComponent.GetTransform(), intersection_distance))
-				//	{
-				//		COSMOS_LOG(Logger::Trace, "Hit");
-				//	}
-				//}
+				auto [idComponent, transformComponent, meshComponent] = meshView.get<IDComponent, TransformComponent, MeshComponent>(ent);
+
+				if (meshComponent.mesh == nullptr || !meshComponent.mesh->IsLoaded())
+					continue;
+
+				if (TestRayOBBIntersection(
+					ray_origin,
+					ray_direction,
+					aabb_min,
+					aabb_max,
+					transformComponent.GetTransform(),
+					intersection_distance))
+				{
+					COSMOS_LOG(Logger::Trace, "Clicked with Raycasting");
+					break;
+				}
 			}
 		}
 

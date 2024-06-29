@@ -16,6 +16,14 @@ namespace Cosmos
 		UpdateViewMatrix();
 	}
 
+	void Camera::SetAspectRatio(float aspect)
+	{
+		glm::mat4 currentMatrix = mPerspective;
+		mPerspective = glm::perspective(glm::radians(mFov), aspect, mZnear, mZfar);
+		mPerspective[1][1] *= -1.0f;
+		mAspectRatio = aspect;
+	}
+
 	glm::mat4& Camera::GetProjectionRef()
 	{
 		mPerspective = glm::perspectiveRH(glm::radians(mFov), mAspectRatio, mZnear, mZfar);
