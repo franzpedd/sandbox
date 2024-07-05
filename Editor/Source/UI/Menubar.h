@@ -23,7 +23,7 @@ namespace Cosmos
 	public:
 
 		// constructor
-		Menubar(Shared<Window> window, Shared<Renderer> renderer, Grid* grid);
+		Menubar(Application* application, Shared<Window> window, Shared<Renderer> renderer, Grid* grid);
 
 		// destructor
 		virtual ~Menubar() = default;
@@ -46,6 +46,7 @@ namespace Cosmos
 
 	private:
 
+		Application* mApplication;
 		Shared<Window> mWindow;
 		Shared<Renderer> mRenderer;
 		Grid* mGrid;

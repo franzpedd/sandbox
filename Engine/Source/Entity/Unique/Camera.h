@@ -62,8 +62,11 @@ namespace Cosmos
 		// returns the current camera rotation
 		inline glm::vec3& GetRotationRef() { return mRotation; }
 
-		// returns the camera eyes
+		// returns the camera front
 		inline glm::vec3& GetFrontRef() { return mFront; }
+
+		// returns the camera view position
+		inline glm::vec4& GetViewPosRef() { return mViewPos; }
 
 	public:
 
@@ -113,6 +116,7 @@ namespace Cosmos
 		glm::vec3 mRotation = glm::vec3(0.0f);
 		glm::vec3 mPosition = glm::vec3(0.0f, 1.0f, 0.0f);
 		glm::vec3 mScale = glm::vec3(1.0f);
+		glm::vec4 mViewPos = glm::vec4(0.0f);
 
 		// W A S D
 		bool mMovingForward = false;

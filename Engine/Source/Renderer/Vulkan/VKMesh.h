@@ -13,67 +13,188 @@
 #include "Wrapper/tinygltf.h"
 #include <volk.h>
 
+// forward declarations
+namespace Cosmos::Vulkan { class VKRenderer; }
+
+namespace Cosmos::Vulkan::GLTF
+{
+	// forward declaration
+	struct Node;
+
+	struct Skin
+	{
+		std::string name;
+		Node* skeletonRoot = nullptr;
+		std::vector<glm::mat4> inverseBindMatrices;
+		std::vector<Node*> joints;
+	};
+
+	struct Primitive
+	{
+		uint32_t firstIndex;
+		uint32_t indexCount;
+		uint32_t vertexCount;
+		Cosmos::Mesh::Material& material;
+		bool hasIndices;
+		Physics::BoundingBox bb;
+
+		// constructor
+		Primitive(uint32_t firstIndex, uint32_t indexCount, uint32_t vertexCount, Cosmos::Mesh::Material& material);
+
+		// sets the bounding box of the primitive
+		void SetBoundingBox(glm::vec3 min, glm::vec3 max);
+	};
+
+	struct Mesh
+	{
+		struct UniformBuffer
+		{
+			VkBuffer buffer;
+			VmaAllocation memory;
+			VkDescriptorBufferInfo descriptor;
+			VkDescriptorSet descriptorSet;
+			void* mapped;
+		};
+
+		struct UniformBlock
+		{
+			glm::mat4 matrix = glm::mat4(1.0f);
+			glm::mat4 jointMatrix[MAX_NUM_JOINTS] = {};
+			uint32_t jointcount{ 0 };
+		};
+
+		Shared<Cosmos::Vulkan::Device> device;
+		std::vector<Primitive*> primitives;
+		Physics::BoundingBox bb;
+		Physics::BoundingBox aabb;
+		UniformBuffer uniformBuffer = {};
+		UniformBlock uniformBlock = {};
+
+		// constructor
+		Mesh(Shared<Cosmos::Vulkan::Device> device, glm::mat4 matrix);
+
+		// destructor
+		~Mesh();
+
+		// sets the mesh bounding box
+		void SetBoundingBox(glm::vec3 min, glm::vec3 max);
+	};
+
+	struct Node
+	{
+		Node* parent = nullptr;
+		uint32_t index = 0;
+		std::vector<Node*> children = {};
+		glm::mat4 matrix = glm::mat4(1.0f);
+		std::string name = {};
+		Mesh* mesh = nullptr;
+		Skin* skin = nullptr;
+		int32_t skinIndex = -1;
+		glm::vec3 translation = glm::vec3(1.0f);
+		glm::vec3 scale = glm::vec3(1.0f);
+		glm::quat rotation = {};
+		Physics::BoundingBox bvh = {};
+		Physics::BoundingBox aabb = {};
+
+		// constructor
+		Node() = default;
+
+		// destructor
+		~Node();
+
+		// calculate the node root matrix
+		glm::mat4 GetLocalMatrix();
+
+		// returns the node matrix, accounting it's leafs
+		glm::mat4 GetMatrix();
+
+		// updates the node position
+		void OnUpdate();
+	};
+
+	struct Animation
+	{
+		struct Channel
+		{
+			enum PathType { TRANSLATION, ROTATION, SCALE };
+			PathType path;
+			Node* node;
+			uint32_t samplerIndex;
+		};
+
+		struct Sampler
+		{
+			enum InterpolationType { LINEAR, STEP, CUBICSPLINE };
+			InterpolationType interpolation;
+			std::vector<float> inputs;
+			std::vector<glm::vec4> outputsVec4;
+			std::vector<float> outputs;
+
+			// calculates the cubic-spline interpolation
+			glm::vec4 CubicSplineInterpolation(size_t index, float time, uint32_t stride);
+
+			// translates the node
+			void Translate(size_t index, float time, Node* node);
+
+			// scales the node
+			void Scale(size_t index, float time, Node* node);
+
+			// rotates the node
+			void Rotate(size_t index, float time, Node* node);
+		};
+
+		std::string name;
+		std::vector<Channel> channels;
+		std::vector<Sampler> samplers;
+		float start = std::numeric_limits<float>::max();
+		float end = std::numeric_limits<float>::min();
+	};
+}
+
 namespace Cosmos::Vulkan
 {
-	// forward declarations
-	class VKRenderer;
-
 	class VKMesh : public Mesh
 	{
 	public:
 
-		// contains the data for a single draw call
-		struct Primitive
+		struct LoaderInfo
 		{
-			uint32_t firstIndex;
-			uint32_t indexCount;
-		};
-
-		// contains the node's (optional) geometry and can be made up of an arbitrary number of primitives
-		struct Mesh
-		{
-			std::vector<Primitive> primitives;
-		};
-
-		// represents an object in the GLTF scene graph
-		struct Node
-		{
-			Node* parent = nullptr;
-			std::vector<Node*> children;
-			Mesh mesh;
-			glm::mat4 matrix;
-
-			// destructor
-			~Node();
+			uint32_t* indexBuffer;
+			Vertex* vertexBuffer;
+			size_t indexPos = 0;
+			size_t vertexPos = 0;
 		};
 
 	public:
 
-		// constructor
+		//constructor
 		VKMesh(Shared<VKRenderer> renderer);
-
+	
 		// destructor
 		virtual ~VKMesh();
-
+	
 		// returns the mesh file name
 		virtual inline std::string GetFilepath() const override { return mFilepath; }
-
+	
 		// returns if the mesh is fully loaded
 		virtual inline bool IsLoaded() const override { return mLoaded; }
-
+	
 		// sets the render mode to wiredframe/fill
 		virtual bool* GetWiredframe() override { return &mWiredframe; }
-
+	
 	public:
-
+	
 		// updates the mesh logic
 		virtual void OnUpdate(float timestep) override;
-
+	
 		// draws the mesh
 		virtual void OnRender(void* commandBuffer, glm::mat4& transform, uint32_t id) override;
-
+	
 		// loads the model from a filepath
 		virtual void LoadFromFile(std::string filepath, float scale = 1.0f) override;
+
+		// returns the mesh dimension
+		virtual Dimension GetDimension() const override;
 
 	public:
 
@@ -83,22 +204,53 @@ namespace Cosmos::Vulkan
 		// returns the colormap texture used by the material's mesh
 		virtual Shared<Texture2D> GetColormapTexture() override;
 
-	private:
+	private: // gltf related
 
-		// loads a node graph from the gltf model
-		void LoadGLTFNode(const tinygltf::Node& inputNode, const tinygltf::Model& input, Node* parent, std::vector<uint32_t>& indexBuffer, std::vector<Vertex>& vertexBuffer);
+		// updates an animation
+		void UpdateAnimation(uint32_t index, float time);
 
 		// draws a node, including it's children if any
-		void DrawNode(Node* node, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout);
+		void DrawNode(GLTF::Node* node, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout);
+		
+		// loads a gltf node
+		void LoadNode(GLTF::Node* parent, const tinygltf::Node& node, uint32_t nodeIndex, const tinygltf::Model& model, LoaderInfo& loaderInfo, float globalscale = 1.0f);
 
-		// creates buffers used by the mesh
-		void CreateRendererResources(size_t vertexBufferSize, size_t indexBufferSize);
+		// returns usefull node properties
+		void GetNodeProperties(const tinygltf::Node& node, const tinygltf::Model& model, size_t& vertexCount, size_t& indexCount);
+
+		// load any material the mesh may have
+		void LoadMaterials(tinygltf::Model& model);
+
+		// load any animation the mesh may have
+		void LoadAnimations(tinygltf::Model& gltfModel);
+
+		// load mesh skins 
+		void LoadSkins(tinygltf::Model& gltfModel);
+
+		// returns a given node based on it's parent
+		GLTF::Node* GetNode(GLTF::Node* parent, uint32_t index);
+
+		// returns a given node based on it's index
+		GLTF::Node* GetNodeFromIndex(uint32_t index);
+
+	public: // renderer related
+
+		// creates all renderer resources used by the mesh
+		void CreateRendererResources(size_t vertexCount, size_t indexCount, LoaderInfo& loaderInfo);
 
 		// creates the uniform buffers and setup descriptors
 		void SetupDescriptors();
-
+		
 		// updates the descriptor sets
 		void UpdateDescriptors();
+
+	public: // size related
+
+		// calculates the initial mesh dimension
+		void CalculateMeshDimension();
+
+		// calculates the bounding box of a node
+		void CalculateBoundingBox(GLTF::Node* node, GLTF::Node* parent);
 
 	private:
 
@@ -107,24 +259,28 @@ namespace Cosmos::Vulkan
 		bool mPicked = false;
 		bool mLoaded = false;
 		bool mWiredframe = false;
+		Dimension mDimension;
 
-		std::vector<Node*> mNodes = {};
-		Material mMaterial = {};
-
-		// raw buffers
+		// data buffers
 		std::vector<uint32_t> mRawIndexBuffer = {};
 		std::vector<Vertex> mRawVertexBuffer = {};
 		
-		// gpu buffer
+		// gpu data
 		VkBuffer mVertexBuffer = VK_NULL_HANDLE;
 		VmaAllocation mVertexMemory = VK_NULL_HANDLE;
 		int mIndicesCount = 0;
 		VkBuffer mIndexBuffer = VK_NULL_HANDLE;
 		VmaAllocation mIndexMemory = VK_NULL_HANDLE;
 
-		// shader descriptors
 		VkDescriptorPool mDescriptorPool = VK_NULL_HANDLE;
 		std::vector<VkDescriptorSet> mDescriptorSets = {};
+
+		// mesh data
+		Material mMaterial;
+		std::vector<GLTF::Node*> mNodes = {};
+		std::vector<GLTF::Node*> mLinearNodes = {};
+		std::vector<GLTF::Skin*> mSkins;
+		std::vector<GLTF::Animation> mAnimations;
 	};
 }
 

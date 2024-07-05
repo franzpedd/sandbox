@@ -80,6 +80,9 @@ namespace Cosmos
 		// returns the framebuffer size
 		void GetFrameBufferSize(int32_t* width, int32_t* height);
 
+		// returns the window dpi
+		int GetDPI(float* ddpi, float* hdpi, float* vdpi);
+
 		// recreates the window
 		void ResizeFramebuffer();
 

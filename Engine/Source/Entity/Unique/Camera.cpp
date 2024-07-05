@@ -141,6 +141,8 @@ namespace Cosmos
 
 		if (mType == Type::FREE_LOOK) mView = scaleMat * rotMat * translateMat;
 		else mView = scaleMat * translateMat * rotMat;
+
+		mViewPos = glm::vec4(mPosition, 0.0f) * glm::vec4(-1.0f, 1.0f, -1.0f, 1.0f);
 	}
 
 	void Camera::Translate(glm::vec3 delta)

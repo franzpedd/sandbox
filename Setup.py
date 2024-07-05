@@ -126,6 +126,29 @@ class Dependencies:
             Util.Download(url, path);
             Util.Decompress(path, "Thirdparty/sdl");
 
+    @classmethod
+    def DownloadJolt(itself) :
+
+        Util.Clone("https://github.com/jrouwe/JoltPhysics", "jolt", "master");
+        scriptDir = os.getcwd();
+        os.chdir("Thirdparty/jolt/Build");
+
+        if(platform.system() == "Windows") :
+            
+            if(os.path.isdir("Debug") is False) : 
+                os.makedirs("Debug");
+                subprocess.call("cmake -S . -B Debug", shell = True);
+                subprocess.call("cmake --build Debug --config Debug", shell = True);
+                
+            os.chdir(scriptDir);
+
+            if(os.path.isdir("Release") is False) : 
+                os.makedirs("Release");
+                subprocess.call("cmake -S . -B Release", shell = True);
+                subprocess.call("cmake --build Release --config Release", shell = True);
+            
+            os.chdir(scriptDir);
+
     ## assimp model importer, used to import gltf models and maybe other formats in the future
     #@classmethod
     #def DownloadAssimp(itself, version) : 
@@ -184,6 +207,8 @@ class Dependencies:
 # main
 Dependencies.DownloadVulkan("1.3.236.0");
 Dependencies.DownloadSDL("2.30.2");
+Dependencies.DownloadJolt();
+
 #Dependencies.DownloadAssimp("master");
 #Dependencies.DownloadOpenAL("master");
 Util.Clone("https://github.com/zeux/volk", "volk", "master");

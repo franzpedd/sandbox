@@ -4,8 +4,8 @@
 
 namespace Cosmos
 {
-	Menubar::Menubar(Shared<Window> window, Shared<Renderer> renderer, Grid* grid)
-		: Widget("Menubar"), mWindow(window), mRenderer(renderer), mGrid(grid)
+	Menubar::Menubar(Application* application, Shared<Window> window, Shared<Renderer> renderer, Grid* grid)
+		: Widget("Menubar"), mApplication(application), mWindow(window), mRenderer(renderer), mGrid(grid)
 	{
 
 	}
@@ -65,6 +65,16 @@ namespace Cosmos
 			if (ImGui::MenuItem("Scene Settings", nullptr))
 			{
 				mDisplaySceneSettings = true;
+			}
+
+			ImGui::EndMenu();
+		}
+
+		if (ImGui::BeginMenu(ICON_LC_EGG " Debug"))
+		{
+			if (ImGui::MenuItem("Simulate Physics Test", nullptr))
+			{
+				mApplication->GetPhysicsWorld()->RunTest();
 			}
 
 			ImGui::EndMenu();

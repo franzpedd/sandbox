@@ -44,6 +44,11 @@ namespace Cosmos
 
 		// event handling
 		virtual void OnEvent(Shared<Event> event);
+
+	public:
+
+		// if using a custom viewport, hint it's size into the renderer
+		void HintViewportSize(float x, float y) { mViewportSizeX = x; mViewportSizeY = y; }
 		
 	protected:
 
@@ -54,5 +59,6 @@ namespace Cosmos
 		uint32_t mCurrentFrame = 0;
 		uint32_t mImageIndex = 0;
 		const uint32_t mConcurrentlyRenderedFrames = 2;
+		float mViewportSizeX, mViewportSizeY = 0.0f;
 	};
 }

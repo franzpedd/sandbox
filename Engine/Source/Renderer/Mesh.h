@@ -16,10 +16,17 @@ namespace Cosmos
 
 		struct Material
 		{
+			int32_t index = 0;						// used when a mesh contain more than one material
 			std::string name = { "Base Material" };	// material's name
-
 			std::string colormapPath;				// color-map path
 			Shared<Texture2D> colormapTex;			// color-map texture
+		};
+
+		struct Dimension
+		{
+			glm::mat4 aabb;
+			glm::vec3 min = glm::vec3(FLT_MAX);
+			glm::vec3 max = glm::vec3(-FLT_MAX);
 		};
 
 	public:
@@ -50,11 +57,14 @@ namespace Cosmos
 		// loads the model from a filepath
 		virtual void LoadFromFile(std::string filepath, float scale = 1.0f) = 0;
 
+		// returns the mesh dimension
+		virtual Dimension GetDimension() const = 0;
+
 	public: // materials
 
 		// modifies the mesh material's colormap
 		virtual void SetColormapTexture(std::string filepath) = 0;
-
+		
 		// returns the colormap texture used by the material's mesh
 		virtual Shared<Texture2D> GetColormapTexture() = 0;
 	};

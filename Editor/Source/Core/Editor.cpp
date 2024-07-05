@@ -26,7 +26,7 @@ namespace Cosmos
 		// explorer uses viewport's msaa for rendering images (it's count is 1 for better performance while on editor)
 		mExplorer = new Explorer(mRenderer);
 
-		mMenubar = new Menubar(mWindow, mRenderer, mGrid);
+		mMenubar = new Menubar(this, mWindow, mRenderer, mGrid);
 
 		// dockspace must be the first, since we're going to render the scene into the viewport
 		mUI->AddWidget(mDockspace); 

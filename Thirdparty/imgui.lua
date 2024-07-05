@@ -1,6 +1,7 @@
 project "ImGui"
     location "imgui"
     kind "StaticLib"
+    staticruntime "On" -- does not affect linux or macos
     language "C++"
     cppdialect "C++17"
 

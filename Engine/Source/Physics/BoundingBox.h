@@ -2,7 +2,7 @@
 
 #include "Util/Math.h"
 
-namespace Cosmos
+namespace Cosmos::Physics
 {
 	class BoundingBox
 	{
@@ -11,28 +11,37 @@ namespace Cosmos
 		// constructor
 		BoundingBox() = default;
 
-		// constructor 
+		// constructor
 		BoundingBox(glm::vec3 min, glm::vec3 max);
 
-		// returns a reference to the min vector
-		inline glm::vec3& GetMinRef() { return mMin; }
+		// destructor
+		~BoundingBox() = default;
 
-		// returns a reference to the max vector
-		inline glm::vec3& GetMaxRef() { return mMax; }
+		// returns the axis-align bounding box
+		BoundingBox GetAABB(glm::mat4 mat);
 
-		// returns if the bounding box was validated
-		inline bool IsValid() const { return mValid; }
+		// returns the max value
+		inline glm::vec3 GetMax() const { return mMax; }
 
-		// sets the bounding box to valid or not
-		inline void SetValid(bool value) { mValid = value; }
+		// sets a new max value
+		inline void SetMax(glm::vec3 max) { mMax = max; }
 
-		// returns the axis-aligned bounding boxes
-		BoundingBox GetAABB(glm::mat4 m);
+		// returns the min value
+		inline glm::vec3 GetMin() const { return mMin; }
+
+		// sets a new min value
+		inline void SetMin(glm::vec3 min) { mMin = min; }
+
+		// returns if bounding box was validated
+		inline bool IsValid() const { return mValidated; }
+
+		// sets the validation status of the bounding box
+		inline void SetValid(bool value) { mValidated = value; }
 
 	private:
 
-		glm::vec3 mMin;
-		glm::vec3 mMax;
-		bool mValid = false;
+		glm::vec3 mMin = {};
+		glm::vec3 mMax = {};
+		bool mValidated = false;
 	};
 }

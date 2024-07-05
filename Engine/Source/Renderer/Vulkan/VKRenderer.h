@@ -85,9 +85,11 @@ namespace Cosmos::Vulkan
 		GPUBufferData mCameraData;
 		GPUBufferData mWindowData;
 		GPUBufferData mPickingData;
-		uint32_t mPickingID = 0;
+		
 
 	public:
+
+		uint32_t mPickingID = 0;
 
 		// returns a reference to the camera global buffer
 		inline GPUBufferData& GetCameraDataRef() { return mCameraData; }

@@ -175,7 +175,6 @@ namespace Cosmos::Vulkan
             case Vertex::Component::JOINT: return VkVertexInputAttributeDescription({ location, binding, VK_FORMAT_R32G32B32A32_UINT, offsetof(Vertex, joint) });
             case Vertex::Component::WEIGHT: return VkVertexInputAttributeDescription({ location, binding, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(Vertex, weight) });
             case Vertex::Component::COLOR: return VkVertexInputAttributeDescription({ location, binding, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(Vertex, color) });
-            case Vertex::Component::UID: return VkVertexInputAttributeDescription({ location, binding, VK_FORMAT_R32_UINT, offsetof(Vertex, uid) });
         }
         
         return VkVertexInputAttributeDescription({});
@@ -197,7 +196,6 @@ namespace Cosmos::Vulkan
                 case Vertex::Component::JOINT: location = 3; break;
                 case Vertex::Component::WEIGHT: location = 4; break;
                 case Vertex::Component::COLOR: location = 5; break;
-                case Vertex::Component::UID: location = 6; break;
             }
 
             result.push_back(GetInputAttributeDescription(binding, location, component));

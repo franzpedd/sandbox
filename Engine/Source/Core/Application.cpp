@@ -3,6 +3,7 @@
 
 #include "Event.h"
 #include "Scene.h"
+#include "Physics/PhysicsWorld.h"
 #include "Platform/Window.h"
 #include "Renderer/Renderer.h"
 #include "UI/UI.h"
@@ -11,6 +12,7 @@ namespace Cosmos
 {
 	Application::Application()
 	{
+		mPhysicsWorld = CreateShared<Physics::PhysicsWorld>();
 		mWindow = CreateShared<Window>(this, "Cosmos", 1280, 720);
 		mRenderer = Renderer::Create(this, mWindow);
 		mUI = UI::Create(this);

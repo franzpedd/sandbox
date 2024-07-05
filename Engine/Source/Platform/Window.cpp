@@ -50,7 +50,7 @@ namespace Cosmos
 			SDL_WINDOWPOS_CENTERED,
 			mWidth,
 			mHeight,
-			SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI
+			SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE
 		);
 
 		if (!mNativeWindow)
@@ -190,7 +190,7 @@ namespace Cosmos
 
     void Window::GetMousePosition(int* x, int* y)
     {
-        SDL_GetMouseState(x, y);
+        SDL_GetGlobalMouseState(x, y);
     }
 
     void Window::GetSize(int* x, int* y)
@@ -203,6 +203,11 @@ namespace Cosmos
 #if defined COSMOS_RENDERER_VULKAN
         SDL_Vulkan_GetDrawableSize(mNativeWindow, width, height);
 #endif
+    }
+
+    int Window::GetDPI(float* ddpi, float* hdpi, float* vdpi)
+    {
+        return SDL_GetDisplayDPI(0, ddpi, hdpi, vdpi);
     }
 
     void Window::ResizeFramebuffer()

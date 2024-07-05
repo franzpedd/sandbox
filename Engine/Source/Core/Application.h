@@ -6,10 +6,13 @@ namespace Cosmos
 {
 	// forward declarations
 	class Event;
+	class PhysicsWorld;
 	class Renderer;
 	class Scene;
 	class UI;
 	class Window;
+
+	namespace Physics { class PhysicsWorld; }
 
 	class Application
 	{
@@ -33,6 +36,9 @@ namespace Cosmos
 		// returns a smart-ptr to the scene
 		inline Shared<Scene> GetScene() { return mScene; }
 
+		// returns a smart-ptr to the physics world
+		inline Shared<Physics::PhysicsWorld> GetPhysicsWorld() { return mPhysicsWorld; }
+
 	public:
 
 		// main loop
@@ -47,5 +53,6 @@ namespace Cosmos
 		Shared<Renderer> mRenderer;
 		Shared<UI> mUI;
 		Shared<Scene> mScene;
+		Shared<Physics::PhysicsWorld> mPhysicsWorld;
 	};
 }

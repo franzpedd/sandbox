@@ -33,7 +33,6 @@ namespace Cosmos
 
 	void Viewport::OnUpdate()
 	{
-		
 		if (ImGui::Begin("Viewport"))
 		{
 			ImGui::Image(mDescriptorSets[mRenderer->GetCurrentFrame()], ImGui::GetContentRegionAvail());
@@ -49,6 +48,9 @@ namespace Cosmos
 			mContentRegionMin.y += ImGui::GetWindowPos().y;
 			mContentRegionMax.x += ImGui::GetWindowPos().x;
 			mContentRegionMax.y += ImGui::GetWindowPos().y;
+
+			// send viewport size to renderer
+			mRenderer->HintViewportSize(mCurrentSize.x, mCurrentSize.y);
 
 			// draw gizmos
 			mSceneGizmos->DrawGizmos(mSceneHierarchy->GetSelectedEntityRef(), mCurrentSize);
@@ -91,46 +93,45 @@ namespace Cosmos
 
 		if (event->GetType() == Event::Type::MousePress)
 		{
-			glm::vec3 ray_origin, ray_direction;
-			int x, y, width, height;
-			auto camera = mRenderer->GetCamera();
-			mWindow->GetMousePosition(&x, &y);
-			mWindow->GetSize(&width, &height);
-
-			ScreenPosToWorldRay
-			(
-				x, y,
-				width, height,
-				camera->GetViewRef(),
-				camera->GetProjectionRef(),
-				ray_origin,
-				ray_direction
-			);
-
-			float intersection_distance; // Output of TestRayOBBIntersection()
-			glm::vec3 aabb_min(-1.0f, -1.0f, -1.0f);
-			glm::vec3 aabb_max(1.0f, 1.0f, 1.0f);
-
-			auto meshView = mScene->GetRegistryRef().view<IDComponent, TransformComponent, MeshComponent>();
-			for (auto ent : meshView)
-			{
-				auto [idComponent, transformComponent, meshComponent] = meshView.get<IDComponent, TransformComponent, MeshComponent>(ent);
-
-				if (meshComponent.mesh == nullptr || !meshComponent.mesh->IsLoaded())
-					continue;
-
-				if (TestRayOBBIntersection(
-					ray_origin,
-					ray_direction,
-					aabb_min,
-					aabb_max,
-					transformComponent.GetTransform(),
-					intersection_distance))
-				{
-					COSMOS_LOG(Logger::Trace, "Clicked with Raycasting");
-					break;
-				}
-			}
+			// not doing mouse click object selection, this sucks
+			//ImVec2 cursorClickPosition = ImGui::GetMousePos();
+			//int x, y;
+			//mWindow->GetMousePosition(&x, &y);
+			//bool insideViewport = cursorClickPosition.x <= mContentRegionMax.x
+			//	&& cursorClickPosition.y <= mContentRegionMax.y
+			//	&& cursorClickPosition.x >= mContentRegionMin.x
+			//	&& cursorClickPosition.y >= mContentRegionMin.y;
+			//
+			//if (insideViewport)
+			//{
+			//	auto vkRenderer = std::dynamic_pointer_cast<Vulkan::VKRenderer>(mRenderer);
+			//	void* data;
+			//
+			//	// aint this mapped?
+			//	vmaMapMemory(vkRenderer->GetDevice()->GetAllocator(), vkRenderer->GetPickingDataRef().memories[vkRenderer->GetCurrentFrame()], (void**)&data);
+			//	uint32_t* u = static_cast<uint32_t*>(data);
+			//	uint32_t selectedID = 0;
+			//
+			//	for (int i = 0; i < Z_DEPTH; i++)
+			//	{
+			//		if (u[i] != 0)
+			//		{
+			//			selectedID = u[i];
+			//			break;
+			//		}
+			//	}
+			//
+			//	std::memset(data, 0, Z_DEPTH * sizeof(uint32_t));
+			//	vmaUnmapMemory(vkRenderer->GetDevice()->GetAllocator(), vkRenderer->GetPickingDataRef().memories[vkRenderer->GetCurrentFrame()]);
+			//
+			//	vkRenderer->mPickingID = 0;
+			//
+			//	// we've got it, it sucks ass but I don't have a physics system yet
+			//	if (selectedID != 0)
+			//	{
+			//		vkRenderer->mPickingID = selectedID;
+			//	}
+			//}
 		}
 
 		if (event->GetType() == Event::Type::WindowResize)

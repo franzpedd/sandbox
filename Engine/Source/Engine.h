@@ -18,6 +18,9 @@
 // physics
 #include "Physics/BoundingBox.h"
 #include "Physics/Collision.h"
+#include "Physics/Listener.h"
+#include "Physics/ObjectCollision.h"
+#include "Physics/PhysicsWorld.h"
 
 // renderer
 #include "Renderer/Buffer.h"

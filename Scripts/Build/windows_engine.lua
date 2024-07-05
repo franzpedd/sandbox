@@ -2,6 +2,7 @@
 project "Engine"
     location "%{wks.location}/Engine"
     kind "StaticLib"
+    staticruntime "On"
     language "C++"
     cppdialect "C++17"
 
@@ -31,7 +32,8 @@ project "Engine"
         "%{includes.TinyGLTF}",
 
         "%{wks.location}/Thirdparty/sdl/SDL2-2.30.2/include",   -- SDL location changes depending on operating system
-        "%{wks.location}/Thirdparty/imgui/backends"             -- ImGui rely on backend implementation, we're using SDL2+Vulkan
+        "%{wks.location}/Thirdparty/imgui/backends",            -- ImGui rely on backend implementation, we're using SDL2+Vulkan
+        "%{wks.location}/Thirdparty/jolt"                       -- Physics library
     }
 
     links
@@ -42,7 +44,9 @@ project "Engine"
 
     defines
     {
-        "COSMOS_RENDERER_VULKAN" -- compiles vulkan code
+        "COSMOS_RENDERER_VULKAN", -- compiles vulkan code
+        "_NO_CRT_STDIO_INLINE", 
+        "JPH_DEBUG_RENDERER"
     }
 
     filter "configurations:Debug"
@@ -69,7 +73,9 @@ project "Engine"
         {
             -- sdl
             "%{wks.location}/Thirdparty/sdl/SDL2-2.30.2/lib/x64/SDL2.lib",
-            "%{wks.location}/Thirdparty/sdl/SDL2-2.30.2/lib/x64/SDL2main.lib"
+            "%{wks.location}/Thirdparty/sdl/SDL2-2.30.2/lib/x64/SDL2main.lib",
+            -- jolt
+            "%{wks.location}/Thirdparty/jolt/Build/Debug/Debug/Jolt.lib"
         }
 
         linkoptions
@@ -96,5 +102,7 @@ project "Engine"
         {
             -- sdl
             "%{wks.location}/Thirdparty/sdl/SDL2-2.30.2/lib/x64/SDL2.lib",
-            "%{wks.location}/Thirdparty/sdl/SDL2-2.30.2/lib/x64/SDL2main.lib"
+            "%{wks.location}/Thirdparty/sdl/SDL2-2.30.2/lib/x64/SDL2main.lib",
+            -- jolt
+            "%{wks.location}/Thirdparty/jolt/Build/Release/Release/Jolt.lib"
         }

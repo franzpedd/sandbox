@@ -145,33 +145,6 @@ namespace Cosmos::Vulkan
 	void VKRenderer::OnEvent(Shared<Event> event)
 	{
 		Renderer::OnEvent(event);
-
-		if (event->GetType() == Event::Type::MousePress)
-		{
-			void* data;
-			vmaMapMemory(mDevice->GetAllocator(), mPickingData.memories[mCurrentFrame], (void**)&data); // aint this mapped?
-			uint32_t* u = static_cast<uint32_t*>(data);
-			uint32_t selectedID = 0;
-		
-			for (int i = 0; i < Z_DEPTH; i++)
-			{
-				if (u[i] != 0)
-				{
-					selectedID = u[i];
-					break;
-				}
-			}
-		
-			std::memset(data, 0, Z_DEPTH * sizeof(uint32_t));
-			vmaUnmapMemory(mDevice->GetAllocator(), mPickingData.memories[mCurrentFrame]);
-		
-			// we've got it, it sucks ass but I don't have a physics system yet
-			mPickingID = 0;
-			if (selectedID != 0)
-			{
-				mPickingID = selectedID;
-			}
-		}
 	}
 
 	void VKRenderer::ManageRenderpasses()
@@ -317,36 +290,6 @@ namespace Cosmos::Vulkan
 
 			COSMOS_ASSERT(vkEndCommandBuffer(cmdBuffer) == VK_SUCCESS, "Failed to end command buffer recording");
 		}
-
-		// mouse picking
-		//void* data;
-		//vmaMapMemory(mDevice->GetAllocator(), mPickingData.memories[mCurrentFrame], (void**)&data); // aint this mapped?
-		//uint32_t* u = static_cast<uint32_t*>(data);
-		//uint32_t selectedID = 0;
-		//
-		//for (int i = 0; i < Z_DEPTH; i++)
-		//{
-		//	if (u[i] != 0)
-		//	{
-		//		selectedID = u[i];
-		//		break;
-		//	}
-		//}
-		//
-		//std::memset(data, 0, Z_DEPTH * sizeof(uint32_t));
-		//vmaUnmapMemory(mDevice->GetAllocator(), mPickingData.memories[mCurrentFrame]);
-		//
-		//// we've got it
-		//
-		//if (selectedID != 0)
-		//{
-		//	mPickingID = selectedID;
-		//}
-		//
-		//else
-		//{
-		//	mPickingID = 0;
-		//}
 	}
 
 	void VKRenderer::SendGlobalResources()
@@ -361,7 +304,8 @@ namespace Cosmos::Vulkan
 
 		// window data
 		int x, y;
-		mApplication->GetWindow()->GetMousePosition(&x, &y);
+		auto win = mApplication->GetWindow();
+		win->GetMousePosition(&x, &y);
 
 		WindowBuffer window = {};
 		window.mousePos = glm::vec2((float)x, (float)y);

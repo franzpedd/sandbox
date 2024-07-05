@@ -2,6 +2,7 @@
 project "Editor"
     location "%{wks.location}/Editor"
     kind "ConsoleApp"
+    staticruntime "On"
     language "C++"
     cppdialect "C++17"
 
@@ -25,13 +26,21 @@ project "Editor"
         "%{includes.ImGui}",
         "%{includes.ImGuizmo}",
         "%{includes.Entt}",
-        "%{includes.TinyGLTF}"
+        "%{includes.TinyGLTF}",
+
+        "%{wks.location}/Thirdparty/jolt"   -- Physics library
     }
 
     links
     {
         "ImGui",
         "Engine"
+    }
+
+    defines
+    { 
+        "_NO_CRT_STDIO_INLINE", 
+        "JPH_DEBUG_RENDERER"
     }
     
     filter "configurations:Debug"
@@ -41,7 +50,8 @@ project "Editor"
 
         links
         {
-
+            -- jolt
+            --"%{wks.location}/Thirdparty/jolt/Build/Debug/Debug/Jolt.lib"
         }
 
         defines
@@ -56,5 +66,6 @@ project "Editor"
 
         links
         {
-
+            -- jolt
+            --"%{wks.location}/Thirdparty/jolt/Build/Release/Release/Jolt.lib"
         }
