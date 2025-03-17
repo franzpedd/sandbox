@@ -4,8 +4,8 @@
 
 namespace Cosmos
 {
-	SceneHierarchy::SceneHierarchy(Shared<Renderer> renderer, Shared<Scene> scene)
-		: mRenderer(renderer), mScene(scene)
+	SceneHierarchy::SceneHierarchy(Shared<Renderer> renderer, Shared<Physics::PhysicsWorld> physicsWorld, Shared<Scene> scene)
+		: mRenderer(renderer), mPhysicsWorld(physicsWorld), mScene(scene)
 	{
 	}
 
@@ -113,6 +113,7 @@ namespace Cosmos
 			{
 				DisplayAddComponentEntry<TransformComponent>("Transform");
 				DisplayAddComponentEntry<MeshComponent>("Mesh");
+				DisplayAddComponentEntry<PhysicsComponent>("Physics");
 
 				ImGui::EndMenu();
 			}
@@ -245,6 +246,57 @@ namespace Cosmos
 				if (ImGui::Checkbox("Wiredframe", component.mesh->GetWiredframe()))
 				{
 
+				}
+			});
+
+		DrawComponent<PhysicsComponent>("Physics", mSelectedEntity, [&](PhysicsComponent& component)
+			{
+				if (component.object == nullptr)
+				{
+					component.object = CreateShared<Physics::PhysicalObject>(mPhysicsWorld);
+				}
+
+				if (ImGui::Button("Calculate boundaries"))
+				{
+					if (!mSelectedEntity->HasComponent<MeshComponent>())
+					{
+						COSMOS_LOG(Logger::Error, "Entity doesn't have mesh in order to have physics boundaries");
+						return;
+					}
+
+					if (!mSelectedEntity->GetComponent<MeshComponent>().mesh->IsLoaded())
+					{
+						COSMOS_LOG(Logger::Error, "Entity mesh was not yet loaded in order to have physics boundaries");
+						return;
+					}
+
+					// get vertices positions from the mesh component and transform them into JPH::Vec3
+					std::vector<Vertex> meshVertices = mSelectedEntity->GetComponent<MeshComponent>().mesh->GetVertices();
+					JPH::Array<JPH::Vec3> boundariesVertices = {};
+
+					for (auto& vertice : meshVertices)
+					{
+						boundariesVertices.push_back(JPH::Vec3(vertice.position.x, vertice.position.y, vertice.position.z));
+					}
+
+					JPH::ConvexHullShapeSettings settings(boundariesVertices, JPH::cDefaultConvexRadius);
+					JPH::Shape::ShapeResult result = settings.Create();
+					JPH::ShapeRefC shape = result.Get();
+
+					if (result.HasError())
+					{
+						COSMOS_LOG(Logger::Error, "Shape was not successfully created Error: %s", result.GetError());
+						return;
+					}
+
+					// get center of the mesh transform
+					glm::vec3 center = mSelectedEntity->GetComponent<TransformComponent>().GetCenter();
+					component.object->LoadSettings(shape, JPH::Vec3(center.x, center.y, center.z), JPH::EMotionType::Static, Physics::Static_Layer, JPH::Quat::sIdentity());
+				}
+
+				if (ImGui::Checkbox("Dynamic Body", component.object->GetDynamicPtr()))
+				{
+					component.object->SetMotionType(JPH::EMotionType::Dynamic);
 				}
 			});
 	}

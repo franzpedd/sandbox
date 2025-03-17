@@ -18,13 +18,19 @@ namespace Cosmos::Physics
 		// destructor
 		~PhysicalObject();
 
-		// returns a reference to the physical object mode, allowing to modify it
-		inline JPH::EMotionType& GetMotionTypeRef() { return mMotionType; }
+		// returns a ptr that flags the motion type of the object
+		inline bool* GetDynamicPtr() { return &mDynamic; }
+
+		// returns the physical object mode
+		inline JPH::EMotionType GetMotionType() const { return mMotionType; }
+
+		// sets the motion type of the object
+		inline void SetMotionType(JPH::EMotionType type) { mMotionType = type; mDynamic = mMotionType != JPH::EMotionType::Static; }
 
 	public:
 
 		// sets the object phyiscal properties
-		void LoadSettings(JPH::ShapeSettings& shapeSettings, JPH::Vec3 inPosition, JPH::EMotionType mode, JPH::ObjectLayer layer, JPH::Quat rotation = JPH::Quat::sIdentity());
+		void LoadSettings(JPH::ShapeRefC shape, JPH::Vec3 inPosition, JPH::EMotionType mode, JPH::ObjectLayer layer, JPH::Quat rotation);
 
 	public:
 
@@ -38,6 +44,7 @@ namespace Cosmos::Physics
 
 		Shared<Physics::PhysicsWorld> mPhysicsWorld;
 		JPH::EMotionType mMotionType = JPH::EMotionType::Static;
+		bool mDynamic = false;
 		bool mShapeHasBeenSet = false;
 		JPH::Body* mBody = nullptr;
 		JPH::RVec3 mCurrentPosition = {};

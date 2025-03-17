@@ -18,6 +18,7 @@ project "Editor"
     includedirs
     {
         "%{includes.Editor}",
+        "%{includes.Renderer}",
         "%{includes.Engine}",
         "%{includes.Vulkan}",
         "%{includes.Volk}",
@@ -33,6 +34,7 @@ project "Editor"
 
     links
     {
+        "Renderer",
         "ImGui",
         "Engine"
     }

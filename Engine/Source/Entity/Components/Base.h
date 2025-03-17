@@ -43,5 +43,12 @@ namespace Cosmos
 		{
 			return glm::transpose(glm::inverse(glm::mat3(GetTransform())));
 		}
+
+		// returns the center of the matrix
+		glm::vec3 GetCenter() const
+		{
+			glm::mat4 matrix = GetTransform();
+			return glm::vec3(matrix[3][0], matrix[3][1], matrix[3][2]);
+		}
 	};
 }

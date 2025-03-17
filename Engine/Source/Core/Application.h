@@ -18,11 +18,25 @@ namespace Cosmos
 	{
 	public:
 
+		enum Status
+		{
+			Paused,
+			Playing
+		};
+
+	public:
+
 		// constructor
 		Application();
 
 		// destructor
 		~Application();
+
+		// returns the current status of the physics world
+		inline Status GetStatus() const { return mStatus; }
+
+		// sets a new status for the physics world
+		inline void SetStatus(Status status) { mStatus = status; }
 
 		// returns a smart-ptr to the window
 		inline Shared<Window> GetWindow() { return mWindow; }
@@ -39,6 +53,8 @@ namespace Cosmos
 		// returns a smart-ptr to the physics world
 		inline Shared<Physics::PhysicsWorld> GetPhysicsWorld() { return mPhysicsWorld; }
 
+
+
 	public:
 
 		// main loop
@@ -49,6 +65,7 @@ namespace Cosmos
 
 	protected:
 
+		Status mStatus = Status::Paused;
 		Shared<Window> mWindow;
 		Shared<Renderer> mRenderer;
 		Shared<UI> mUI;

@@ -14,7 +14,7 @@ namespace Cosmos
 	public:
 
 		// constructor
-		Viewport(Shared<Window> window, Shared<Renderer> renderer, Shared<UI> ui, Shared<Scene> scene, SceneHierarchy* sceneHierarchy);
+		Viewport(Application* application, Shared<Window> window, Shared<Renderer> renderer, Shared<UI> ui, Shared<Scene> scene, SceneHierarchy* sceneHierarchy);
 
 		// destructor
 		virtual ~Viewport();
@@ -32,8 +32,8 @@ namespace Cosmos
 
 	private:
 
-		// draws an overlayed menu into the viewport, for gizmos operation and more
-		void DrawOverlayedMenu();
+		// draws a menubar into the viewport, for gizmos operation and more
+		void DrawMenuBar();
 
 		// creates all renderer resources
 		void CreateRendererResources();
@@ -46,6 +46,7 @@ namespace Cosmos
 
 	private:
 
+		Application* mApplication;
 		Shared<Window> mWindow;
 		Shared<Renderer> mRenderer;
 		Shared<UI> mUI;

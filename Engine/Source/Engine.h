@@ -7,6 +7,7 @@
 // entity system
 #include "Entity/Entity.h"
 #include "Entity/Components/Base.h"
+#include "Entity/Components/Physics.h"
 #include "Entity/Components/Renderable.h"
 #include "Entity/Unique/Camera.h"
 
@@ -20,6 +21,7 @@
 #include "Physics/Collision.h"
 #include "Physics/Listener.h"
 #include "Physics/ObjectCollision.h"
+#include "Physics/PhysicalObject.h"
 #include "Physics/PhysicsWorld.h"
 
 // renderer

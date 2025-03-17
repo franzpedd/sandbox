@@ -1,8 +1,10 @@
 #pragma once
 
+#include "Vertex.h"
 #include "Util/Math.h"
 #include "Util/Memory.h"
 #include <string>
+#include <vector>
 
 namespace Cosmos
 {
@@ -45,6 +47,9 @@ namespace Cosmos
 
 		// gets the render mode to wiredframe/fill
 		virtual bool* GetWiredframe() = 0;
+
+		// returns the vector of vertices of the mesh
+		virtual std::vector<Vertex> GetVertices() const = 0;
 
 	public:
 

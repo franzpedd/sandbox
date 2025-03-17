@@ -21,6 +21,7 @@ project "Engine"
     includedirs
     {
         "%{includes.Engine}",
+        "%{includes.Renderer}",
         "%{includes.Vulkan}",
         "%{includes.Volk}",
         "%{includes.VMA}",
@@ -38,6 +39,7 @@ project "Engine"
 
     links
     {
+        "Renderer",
         "ImGui",
         "%{libraries.Shaderc}"
     }
@@ -79,7 +81,7 @@ project "Engine"
         }
 
         linkoptions
-         {
+        {
             "/ignore:4006"
         }
 

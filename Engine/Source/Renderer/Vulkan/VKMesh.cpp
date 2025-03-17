@@ -340,7 +340,6 @@ namespace Cosmos::Vulkan
 			COSMOS_LOG(Logger::Error, "Loading mesh %s with warning(s): %s", filepath.c_str(), warning.c_str());
 		}
 
-		LoaderInfo loaderInfo = {};
 		size_t vertexCount = 0;
 		size_t indexCount = 0;
 
@@ -354,8 +353,11 @@ namespace Cosmos::Vulkan
 			GetNodeProperties(model.nodes[scene.nodes[i]], model, vertexCount, indexCount);
 		}
 
+		LoaderInfo loaderInfo = {};
 		loaderInfo.vertexBuffer = new Vertex[vertexCount];
 		loaderInfo.indexBuffer = new uint32_t[indexCount];
+
+		mVertices.resize(vertexCount);
 
 		COSMOS_LOG(Logger::Todo, "Handle scene with no default scene");
 
@@ -393,11 +395,11 @@ namespace Cosmos::Vulkan
 
 		CalculateMeshDimension();
 
-		delete[] loaderInfo.vertexBuffer;
-		delete[] loaderInfo.indexBuffer;
-
 		mFilepath = filepath;
 		mLoaded = true;
+
+		delete[] loaderInfo.vertexBuffer;
+		delete[] loaderInfo.indexBuffer;
 	}
 
 	Mesh::Dimension VKMesh::GetDimension() const
@@ -702,6 +704,7 @@ namespace Cosmos::Vulkan
 						}
 
 						loaderInfo.vertexPos++;
+						mVertices[v] = vert;
 					}
 				}
 

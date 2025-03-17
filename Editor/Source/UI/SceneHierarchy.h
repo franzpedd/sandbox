@@ -9,7 +9,7 @@ namespace Cosmos
 	public:
 
 		// constructor
-		SceneHierarchy(Shared<Renderer> renderer, Shared<Scene> scene);
+		SceneHierarchy(Shared<Renderer> renderer, Shared<Physics::PhysicsWorld> physicsWorld, Shared<Scene> scene);
 
 		// destructor
 		~SceneHierarchy();
@@ -50,6 +50,7 @@ namespace Cosmos
 	private:
 
 		Shared<Renderer> mRenderer;
+		Shared<Physics::PhysicsWorld> mPhysicsWorld;
 		Shared<Scene> mScene;
 		Shared<Entity> mSelectedEntity = nullptr; // working with only one selected entity at a time
 	};

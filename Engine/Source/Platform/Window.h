@@ -6,6 +6,7 @@
 
 // forward declaration
 struct SDL_Window;
+struct SDL_SysWMinfo;
 
 namespace Cosmos
 {
@@ -73,6 +74,9 @@ namespace Cosmos
 		static void GetMousePosition(int* x, int* y);
 
 	public: // window 
+
+		// returns system information
+		bool GetSystemInformation(SDL_SysWMinfo* info);
 
 		// returns window size
 		void GetSize(int* x, int* y);

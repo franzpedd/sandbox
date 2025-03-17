@@ -17,12 +17,14 @@
 #if defined COSMOS_RENDERER_VULKAN
 #include <SDL2/SDL_vulkan.h>
 #endif
+#include <SDL2/SDL_syswm.h>
 #include <SDL2/SDL_scancode.h>
 #elif defined(PLATFORM_WINDOWS)
 #include <SDL.h>
 #if defined COSMOS_RENDERER_VULKAN
 #include <SDL_vulkan.h>
 #endif
+#include <SDL_syswm.h>
 #include <SDL_scancode.h>
 #endif
 
@@ -191,6 +193,11 @@ namespace Cosmos
     void Window::GetMousePosition(int* x, int* y)
     {
         SDL_GetGlobalMouseState(x, y);
+    }
+
+    bool Window::GetSystemInformation(SDL_SysWMinfo* info)
+    {
+        return SDL_GetWindowWMInfo(mNativeWindow, info);
     }
 
     void Window::GetSize(int* x, int* y)

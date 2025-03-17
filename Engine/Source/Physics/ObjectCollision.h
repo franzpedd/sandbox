@@ -5,7 +5,7 @@
 namespace Cosmos::Physics
 {
 	// layer Groups that an object may belong to
-	static constexpr JPH::ObjectLayer Static_Layer = 0;	// static objects cannot interact with any other objects
+	static constexpr JPH::ObjectLayer Static_Layer = 0;		// static objects cannot interact with any other objects
 	static constexpr JPH::ObjectLayer Dynamic_Layer = 1;	// dynamic objects can interact with any other objects
 	static constexpr JPH::ObjectLayer Layer_Max = 2;		// max number of layers
 

@@ -1,6 +1,8 @@
 #include "epch.h"
 #include "PhysicsWorld.h"
 
+#include "Core/Application.h"
+#include "Core/Event.h"
 #include "Util/Logger.h"
 
 #include <cstdarg>
@@ -8,7 +10,8 @@
 
 namespace Cosmos::Physics
 {
-	PhysicsWorld::PhysicsWorld()
+	PhysicsWorld::PhysicsWorld(Application* application)
+		: mApplication(application)
 	{
 		// registering default jolt allocator, witch uses malloc and free
 		// this must be done before any other jolt function
@@ -75,6 +78,18 @@ namespace Cosmos::Physics
 		delete mTempAllocator;
 	}
 
+	void PhysicsWorld::OnUpdate(float timestep)
+	{
+		if (mApplication->GetStatus() == Application::Status::Paused)
+			return;
+
+		mPhysicsSystem.Update(timestep, 1, mTempAllocator, mJobSystem);
+	}
+
+	void PhysicsWorld::OnEvent(Shared<Event> event)
+	{
+	}
+
 	void PhysicsWorld::RunTest()
 	{
 		// gets a reference to the body interface
@@ -84,7 +99,7 @@ namespace Cosmos::Physics
 		// create the settings for the collision volume (the shape). Note that for simple shapes (like boxes) you can also directly construct a BoxShape.
 		JPH::BoxShapeSettings floor_shape_settings(JPH::Vec3(100.0f, 1.0f, 100.0f));
 		// a ref counted object on the stack (base class RefTarget) should be marked as such to prevent it from being freed when its reference count goes to 0.
-		floor_shape_settings.SetEmbedded(); 
+		floor_shape_settings.SetEmbedded();
 
 		// create the shape
 		JPH::ShapeSettings::ShapeResult floor_shape_result = floor_shape_settings.Create();

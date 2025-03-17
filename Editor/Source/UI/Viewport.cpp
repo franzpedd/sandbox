@@ -6,8 +6,8 @@
 
 namespace Cosmos
 {
-	Viewport::Viewport(Shared<Window> window, Shared<Renderer> renderer, Shared<UI> ui, Shared<Scene> scene, SceneHierarchy* sceneHierarchy)
-		: Widget("Viewport"), mWindow(window), mRenderer(renderer), mUI(ui), mScene(scene), mSceneHierarchy(sceneHierarchy)
+	Viewport::Viewport(Application* application, Shared<Window> window, Shared<Renderer> renderer, Shared<UI> ui, Shared<Scene> scene, SceneHierarchy* sceneHierarchy)
+		: Widget("Viewport"), mApplication(application), mWindow(window), mRenderer(renderer), mUI(ui), mScene(scene), mSceneHierarchy(sceneHierarchy)
 	{
 		mSceneGizmos = CreateShared<SceneGizmos>(mRenderer->GetCamera());
 		CreateRendererResources();
@@ -33,7 +33,7 @@ namespace Cosmos
 
 	void Viewport::OnUpdate()
 	{
-		if (ImGui::Begin("Viewport"))
+		if (ImGui::Begin("Viewport", nullptr, ImGuiWindowFlags_MenuBar))
 		{
 			ImGui::Image(mDescriptorSets[mRenderer->GetCurrentFrame()], ImGui::GetContentRegionAvail());
 			
@@ -53,8 +53,8 @@ namespace Cosmos
 			mRenderer->HintViewportSize(mCurrentSize.x, mCurrentSize.y);
 
 			// draw gizmos
+			DrawMenuBar();
 			mSceneGizmos->DrawGizmos(mSceneHierarchy->GetSelectedEntityRef(), mCurrentSize);
-			DrawOverlayedMenu();
 		}
 
 		ImGui::End();
@@ -158,24 +158,15 @@ namespace Cosmos
 		}
 	}
 
-	void Viewport::DrawOverlayedMenu()
+	void Viewport::DrawMenuBar()
 	{
-		// Set position to the top of the viewport
-		ImGui::SetNextWindowPos(ImVec2(mContentRegionMin.x + 2.0f, mContentRegionMin.y + 2.0f));
-		
-		ImGuiWindowFlags toolbarFlags = ImGuiWindowFlags_NoDecoration 
-			| ImGuiWindowFlags_NoMove
-			| ImGuiWindowFlags_NoScrollWithMouse
-			| ImGuiWindowFlags_NoSavedSettings;
-
-		if (ImGui::Begin("##GizmosMenu", nullptr, toolbarFlags))
+		if (ImGui::BeginMenuBar())
 		{
-			ImGui::BringWindowToDisplayFront(ImGui::GetCurrentWindow());
-
 			static uint32_t selectedIndex = 0;
 			SceneGizmos::Mode mode = SceneGizmos::Mode::UNDEFINED;
 			std::string text = { ICON_LC_MOUSE_POINTER };
-
+			
+			// gizmo options
 			for (uint32_t i = 0; i < 4; i++)
 			{
 				switch (i)
@@ -186,40 +177,69 @@ namespace Cosmos
 						text = ICON_LC_MOUSE_POINTER;
 						break;
 					}
-
+				
 					case 1:
 					{
 						mode = SceneGizmos::Mode::TRANSLATE;
 						text = ICON_LC_MOVE_3D;
 						break;
 					}
-
+				
 					case 2:
 					{
 						mode = SceneGizmos::Mode::ROTATE;
 						text = ICON_LC_ROTATE_3D;
 						break;
 					}
-
+				
 					case 3:
 					{
 						mode = SceneGizmos::Mode::SCALE;
 						text = ICON_LC_SCALE_3D;
 						break;
 					}
-
-					default: break;
 				}
-
-				if (ImGui::Selectable(text.c_str(), selectedIndex == i))
+				
+				if (ImGui::MenuItem(text.c_str(), nullptr, selectedIndex == i))
 				{
 					mSceneGizmos->SetMode(mode);
 					selectedIndex = i;
 				}
 			}
+			
+			ImGui::Separator();
+
+			constexpr float itemSize = 35.0f;
+			ImVec2 nextPos = ImVec2(ImGui::GetContentRegionMax().x - itemSize, ImGui::GetCursorPosY());
+			ImGui::SetCursorPos(nextPos);
+
+			ImGui::Separator();
+
+			// application playing
+			if (mApplication->GetStatus() == Application::Status::Paused)
+			{
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 1.0f, 0.0f, 1.0f));
+				if (ImGui::MenuItem(ICON_FA_PLAY))
+				{
+					mApplication->SetStatus(Application::Status::Playing);
+				}
+				ImGui::PopStyleColor();
+			}
+
+			else if (mApplication->GetStatus() == Application::Status::Playing)
+			{
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
+				if (ImGui::MenuItem(ICON_FA_PAUSE))
+				{
+					mApplication->SetStatus(Application::Status::Paused);
+				}
+				ImGui::PopStyleColor();
+			}
+
+			ImGui::Separator();
+
+			ImGui::EndMenuBar();
 		}
-		
-		ImGui::End();
 	}
 
 	void Viewport::CreateRendererResources()

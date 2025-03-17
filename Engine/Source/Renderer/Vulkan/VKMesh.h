@@ -181,7 +181,10 @@ namespace Cosmos::Vulkan
 	
 		// sets the render mode to wiredframe/fill
 		virtual bool* GetWiredframe() override { return &mWiredframe; }
-	
+		
+		// returns the vector of vertices of the mesh
+		virtual std::vector<Vertex> GetVertices() const override { return mVertices; }
+
 	public:
 	
 		// updates the mesh logic
@@ -260,11 +263,10 @@ namespace Cosmos::Vulkan
 		bool mLoaded = false;
 		bool mWiredframe = false;
 		Dimension mDimension;
-
-		// data buffers
-		std::vector<uint32_t> mRawIndexBuffer = {};
-		std::vector<Vertex> mRawVertexBuffer = {};
 		
+		// mesh properties
+		std::vector<Vertex> mVertices = {};
+
 		// gpu data
 		VkBuffer mVertexBuffer = VK_NULL_HANDLE;
 		VmaAllocation mVertexMemory = VK_NULL_HANDLE;

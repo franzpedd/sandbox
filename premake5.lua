@@ -11,6 +11,7 @@ vkpath = os.getenv("VULKAN_SDK");
 
 ---- projects and dependencies header directories
 includes = {}
+includes["Renderer"]  = "%{wks.location}/Renderer/Source"
 includes["Engine"]  = "%{wks.location}/Engine/Source"
 includes["Editor"]  = "%{wks.location}/Editor/Source"
 --
@@ -34,6 +35,7 @@ group "Thirdparty"
 group ""
 ---- projects by os
 if os.host() == "windows" then
+    include "Scripts/Build/windows_renderer.lua"
     include "Scripts/Build/windows_engine.lua"
     include "Scripts/Build/windows_editor.lua"
 end

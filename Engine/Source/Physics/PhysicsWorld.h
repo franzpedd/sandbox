@@ -4,6 +4,9 @@
 #include "Listener.h"
 #include "Util/Memory.h"
 
+// forward declarations
+namespace Cosmos { class Application; class Event; }
+
 namespace Cosmos::Physics
 {
 	class PhysicsWorld
@@ -11,7 +14,7 @@ namespace Cosmos::Physics
 	public:
 
 		// constructor
-		PhysicsWorld();
+		PhysicsWorld(Application* application);
 
 		// destructor
 		~PhysicsWorld();
@@ -21,10 +24,18 @@ namespace Cosmos::Physics
 
 	public:
 
+		// updates the physics world
+		void OnUpdate(float timestep);
+
+		// event handling
+		void OnEvent(Shared<Event> event);
+
 		// test example
 		void RunTest();
 
 	private:
+
+		Application* mApplication;
 
 		JPH::TempAllocatorImpl* mTempAllocator;
 		JPH::JobSystemThreadPool* mJobSystem;

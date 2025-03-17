@@ -21,7 +21,7 @@ namespace Cosmos
 
 	void Scene::OnUpdate(float timestep)
 	{
-		// update meshes
+		// update meshes without physics component
 		auto meshView = mRegistry.view<IDComponent, TransformComponent, MeshComponent>();
 		for (auto ent : meshView)
 		{
@@ -32,6 +32,8 @@ namespace Cosmos
 
 			meshComponent.mesh->OnUpdate(timestep);
 		}
+
+		// update meshes with physics component
 	}
 
 	void Scene::OnRender(void* commandBuffer)

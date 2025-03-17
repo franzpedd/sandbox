@@ -20,25 +20,16 @@ namespace Cosmos::Physics
 		bodyInterface.DestroyBody(mBody->GetID());
 	}
 
-	void PhysicalObject::LoadSettings(JPH::ShapeSettings& shapeSettings, JPH::Vec3 inPosition, JPH::EMotionType mode, JPH::ObjectLayer layer, JPH::Quat rotation)
+	void PhysicalObject::LoadSettings(JPH::ShapeRefC shape, JPH::Vec3 inPosition, JPH::EMotionType mode, JPH::ObjectLayer layer, JPH::Quat rotation)
 	{
 		// setup shape configuration
 		JPH::BodyInterface& bodyInterface = mPhysicsWorld->GetPhysicsSystemRef().GetBodyInterface();
-		JPH::ShapeSettings::ShapeResult result = shapeSettings.Create();
-		JPH::ShapeRefC shape = result.Get();
-
-		if (!result.HasError())
-		{
-			COSMOS_LOG(Logger::Error, "Shape is a nullptr. Error: %s", result.GetError());
-			return;
-		}
-
 		JPH::BodyCreationSettings bodySettings(shape, inPosition, rotation, mode, layer);
-
+		
 		// setup rigid body
 		mBody = bodyInterface.CreateBody(bodySettings);
 		bodyInterface.AddBody(mBody->GetID(), JPH::EActivation::DontActivate); // initially objects are not activated
-
+		
 		// refresh broad phase
 		mPhysicsWorld->GetPhysicsSystemRef().OptimizeBroadPhase();
 	}
